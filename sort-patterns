@@ -1,0 +1,18 @@
+#!/usr/bin/env perl -w
+use strict;
+
+my @lines;
+push( @lines, $_ ) while (<>);
+print sort by_patterns @lines;
+
+sub by_patterns {
+    $A = $a;
+    $B = $b;
+    $C = $a;
+    $D = $b;
+    $A =~ s/\w/w/g;
+    $B =~ s/\w/w/g;
+    $C =~ s/\w+/w/g;
+    $D =~ s/\w+/w/g;
+    return ($A cmp $B || $C cmp $D || $a cmp $b);
+}
