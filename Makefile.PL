@@ -7,5 +7,6 @@ requires 'File::Slurp';
 
 install_script 'count';
 install_script 'random';
+install_script 'jandown';
 
 WriteAll;
