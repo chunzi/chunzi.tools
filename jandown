@@ -1,0 +1,19 @@
+#!/usr/bin/env perl
+# download a torrent file from jandown.com
+use strict;
+use warnings;
+use WWW::Mechanize;
+use File::Slurp;
+
+my $url = shift;
+die "need url for jandown.\n" unless defined $url;
+
+my ( $ref ) = ( $url =~ /\?ref=([a-zA-Z0-9]{10})$/ );
+my $torrent = sprintf '%s.torrent', $ref;
+
+my $m = WWW::Mechanize->new;
+$m->get($url);
+$m->submit_form( form_number => 1 );
+write_file( $torrent, $m->content );
+
+printf STDERR "saved as %s\n", $torrent;
