@@ -1,1 +1,14 @@
 tools I use.
+
+
+Install the tools as system-wide:
+
+  perl Makefile.PL
+  sudo make install
+
+or just in your home directory:
+
+  perl Makefile.PL PREFIX=/Users/chunzi
+  make install
+
+

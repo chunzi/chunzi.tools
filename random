@@ -1,0 +1,7 @@
+#!/usr/bin/env perl -w
+# pick some random lines from stdin
+use strict;
+my @lines;
+my $n = (@ARGV && $ARGV[0] =~ /^\d+$/) ? shift @ARGV : 1;
+rand($.) < $n && ($lines[@lines < $n ? @lines : rand($n)] = $_) while (<>);
+print @lines;

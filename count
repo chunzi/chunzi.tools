@@ -1,0 +1,11 @@
+#!/usr/bin/env perl -w
+# count - equivalent of "sort | uniq -c | sort -nr"
+while (<>) { $lines{$_}++; }
+
+for ( sort byline keys %lines ) {
+    printf "%8s  %s", $lines{$_}, $_;
+}
+
+sub byline {
+    return ( $lines{$b} <=> $lines{$a} ) || ( $b cmp $a );
+}
