@@ -22,27 +22,31 @@ my @pods = File::Find::Rule->any(
 my @entries = map {
 
     printf STDERR "%s\n", $_;
+    my $name; my $filename;
 
-    my $name;
+    # perl module
     if ( /\.pm$/ ){
         ( $name ) = ( /lib\/(.*?)\.pm$/ );
-        $name =~ s/\//-/g;
+        $filename = $name;
+        $name =~ s/\//::/g;
+        $filename =~ s/\//-/g;
+
+    # other 
     }else{
         $name = $_;
-        $name =~ s/\//:/g;
+        $filename = $name;
+        $filename =~ s/\//-/g;
     }
-    my $filename = sprintf "%s.html", $name;
+    $filename .= '.html';
 
     my $html = $html_dir->file( $filename );
     my $data = `pod2html --infile=$_ --css=style.css --flush`; 
     #$data =~ s{</head>}{$pod_css};
     write_file( $html->stringify, $data );
 
-    my $module_name = $name;
-    $module_name =~ s/-/::/g;
     $lis .= ( $data =~ /<ul>/ )
-        ? sprintf "<li><a href='./%s'>%s</a></li>", $name.'.html', $module_name
-        : sprintf "<li><a href='./%s' class='silver'>%s</a></li>", $name.'.html', $module_name;
+        ? sprintf "<li><a href='./%s'>%s</a></li>", $filename, $name
+        : sprintf "<li><a href='./%s' class='silver'>%s</a></li>", $filename, $name;
 
 } sort @pods;
 
