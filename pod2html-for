@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
 use strict;
-use File::Find::Wanted;
-use Path::Class;
+use File::Find::Rule;
 use File::Slurp;
+use Path::Class;
 
 my $pod_dir = shift;
 die "you need give me the pod dir for generating the html version.\n" unless defined $pod_dir;
@@ -14,25 +14,35 @@ my $html_dir = dir( shift || 'htmldoc' );
 my $lis;
 my $link_style_css = q{<link type="text/css" rel="stylesheet" href="style.css" />};
 
-my @pods = find_wanted( sub { -f && /\.(?:pm|pod)$/ }, $pod_dir );
+my @pods = File::Find::Rule->any(
+    File::Find::Rule->name('*.pod', '*.pm', '*.pl'),
+    File::Find::Rule->executable->grep( qr/^#!.*\bperl/, [ sub { 1 } ] ),
+)->in( $pod_dir );
+
 my @entries = map {
 
     printf STDERR "%s\n", $_;
 
-    my ( $name ) = ( /lib\/(.*?)\.(?:pm|pod)$/ );
-    $name =~ s/\//-/g;
+    my $name;
+    if ( /\.pm$/ ){
+        ( $name ) = ( /lib\/(.*?)\.pm$/ );
+        $name =~ s/\//-/g;
+    }else{
+        $name = $_;
+        $name =~ s/\//:/g;
+    }
     my $filename = sprintf "%s.html", $name;
 
     my $html = $html_dir->file( $filename );
-    my $data = `pod2html --infile=$_ --css=pod.css --flush`; 
+    my $data = `pod2html --infile=$_ --css=style.css --flush`; 
     #$data =~ s{</head>}{$pod_css};
     write_file( $html->stringify, $data );
 
     my $module_name = $name;
     $module_name =~ s/-/::/g;
     $lis .= ( $data =~ /<ul>/ )
-        ? sprintf "<li><a href='%s'>%s</a></li>", $name.'.html', $module_name
-        : sprintf "<li><a href='%s' class='silver'>%s</a></li>", $name.'.html', $module_name;
+        ? sprintf "<li><a href='./%s'>%s</a></li>", $name.'.html', $module_name
+        : sprintf "<li><a href='./%s' class='silver'>%s</a></li>", $name.'.html', $module_name;
 
 } sort @pods;
 
