@@ -1,0 +1,65 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Path::Class;
+
+my $home = '/Users/chunzi';
+
+check_dir( $home, allowed => [ qw/
+    Applications
+    Desktop
+    Documents
+    Downloads
+    Dropbox
+    Library
+    Movies
+    Music
+    Pictures
+    Public
+    Sites
+    backup
+    github
+    gitme
+    purge-me
+/ ]);
+map { check_dir( "$home/$_" ) } qw/ Desktop Downloads purge-me /;
+check_git_working_dir("$home/github");
+check_git_working_dir("$home/gitme");
+exit(0);
+
+sub check_dir {
+    my $name = shift;
+    my %param = @_;
+
+    my $dir = dir $name;
+    my @disallowed = grep { ! /^\./ } grep { s/^$name\/// } sort map { "$_" } $dir->children;
+
+    if ( $param{'allowed'} ){
+        my $allowed; map { $allowed->{$_}++ } @{$param{'allowed'}};
+        @disallowed = grep { ! exists $allowed->{$_} } @disallowed;
+    }
+
+    if ( @disallowed ){
+        map { printf "?  $name/%s\n", $_; } @disallowed;
+    }
+}
+
+sub check_git_working_dir {
+    my $name = shift;
+
+    my $dir = dir $name;
+    map { 
+        if ( -d && -d $_->subdir('.git') ){
+            my $status = `cd $_ && git status`;
+            unless ( $status =~ /working directory clean/ ){
+                printf "g  %s\n", $_;
+            } 
+        }else{
+            unless ( -f && $_->basename =~ /^\./ ){
+                printf "?  %s\n", $_;
+            }
+        }
+    } sort $dir->children;
+}
+
+

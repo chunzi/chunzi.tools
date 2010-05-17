@@ -17,6 +17,7 @@ requires 'File::Slurp';
 requires 'Path::Class';
 requires_external_bin 'pod2html';
 install_script 'pod2html-for';
+install_script 'need-purge';
 
 
 auto_install;
