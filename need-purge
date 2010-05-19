@@ -23,6 +23,7 @@ check_dir( $home, allowed => [ qw/
     purge-me
 / ]);
 map { check_dir( "$home/$_" ) } qw/ Desktop Downloads purge-me /;
+check_dir("$home/Movies/Miro", allowed => ['Incomplete Downloads']);
 check_git_working_dir("$home/github");
 check_git_working_dir("$home/gitme");
 exit(0);
