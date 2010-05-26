@@ -21,6 +21,7 @@ check_dir( $home, allowed => [ qw/
     github
     gitme
     purge-me
+    cloud
 / ]);
 map { check_dir( "$home/$_" ) } qw/ Desktop Downloads purge-me /;
 check_dir("$home/Movies/Miro", allowed => ['Incomplete Downloads']);
