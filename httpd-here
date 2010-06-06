@@ -1,0 +1,4 @@
+#!/bin/sh
+# from http://github.com/gugod/bin/
+
+plackup -s Twiggy -MPlack::App::Directory -e 'Plack::App::Directory->new(root => ".")->to_app;'

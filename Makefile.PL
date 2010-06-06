@@ -19,6 +19,9 @@ requires_external_bin 'pod2html';
 install_script 'pod2html-for';
 install_script 'need-purge';
 
+requires 'Plack';
+requires 'Plack::Handler::Twiggy';
+install_script 'httpd-here';
 
 auto_install;
 WriteAll;
