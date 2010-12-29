@@ -1,6 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
+version '0.01';
 
 
 install_script 'count';
@@ -17,7 +18,13 @@ requires 'File::Slurp';
 requires 'Path::Class';
 requires_external_bin 'pod2html';
 install_script 'pod2html-for';
-install_script 'need-purge';
+
+
+requires 'File::HomeDir';
+requires 'Git::Repository';
+requires 'Path::Class';
+install_script 'dust';
+
 
 requires 'Plack';
 requires 'Plack::Handler::Twiggy';
