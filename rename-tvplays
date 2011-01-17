@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+use strict;
+use Path::Class;
+
+my $cwd = dir('.');
+for ( $cwd->children ){
+    next unless -f $_;
+    my $name = $_->basename;
+    my ( $na, $se ) = ( $name =~ m/^(.*?)\b(S\d+E\d+)\b/i );
+    $se = uc $se;
+    $na =~ s/\.$//g;
+    my ( $post ) = ( $name =~ m/\.([^.]*)$/ );
+    next unless $post =~ /mp/;
+    
+    my $new_name = sprintf "%s-%s.%s", $se, $na, $post;
+    my $cmd = "rename $name $new_name\n";
+    print STDERR $cmd;
+    rename $name, $new_name;
+}
+
+
