@@ -30,5 +30,11 @@ requires 'Plack';
 requires 'Plack::Handler::Twiggy';
 install_script 'httpd-here';
 
+requires 'HTML::SimpleLinkExtor';
+install_script 'find-links';
+
+
+install_script 'vpn';
+
 auto_install;
 WriteAll;

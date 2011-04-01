@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+use strict;
+use HTML::SimpleLinkExtor;
+
+my $html;
+while(<>){$html.=$_;}
+
+my $extor = HTML::SimpleLinkExtor->new();
+$extor->parse($html);
+for ( $extor->href ){
+    printf "%s\n", $_;
+}
