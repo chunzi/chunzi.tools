@@ -1,0 +1,64 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use Data::Dumper;
+use File::Copy;
+use Getopt::Long;
+use Path::Class;
+
+my $dry = 0;
+GetOptions ( "dry" => \$dry);
+
+my $extensions = join '|', qw/ jpg png gif url txt nfo mht rar /;
+my $regex_extensions = qr/\.($extensions)$/i;
+
+#---------------------
+# only deal with the current directory
+my $pwd = dir '.';
+for my $dir ( grep { -d } $pwd->children ){
+
+    my $ds = $dir->file('.DS_Store');
+    -f $ds and $ds->remove;
+
+    for my $file ( grep { -f } $dir->children ){
+
+        # remove unless files
+        if ( file_should_remove( $file ) ){ 
+            printf STDERR "rm %s\n", $file;
+            unlink $file unless $dry;
+        }
+        next unless -f $file;
+    
+        my $basename = $file->basename;
+        if ( -s $file > 3000000 && $basename =~ /\.(avi|mkv|wmv)$/i ){
+            my $ext = $1;
+            $basename =~ s/\.$ext$//;
+            $basename =~ s/^[^\@]*\@//;
+            $basename =~ s/\.H264\b//i;
+
+            if ( $basename =~ /^([a-z]+)-?(\d+)$/i ){
+                $basename = sprintf "%s-%03d", uc $1, $2;
+            }
+
+            my $new = $file->dir->parent->file( sprintf "%s.%s", $basename, $ext);
+            printf STDERR "mv %s %s\n", $file, $new;
+            rename "$file", "$new" unless $dry;
+        }
+    }
+
+    # remove empty directory
+    my @found = $dir->children;
+    $dir->rmtree if not @found;
+}
+
+
+exit;
+
+sub file_should_remove {
+    my $file = shift;
+    return 1 if $file =~ $regex_extensions;
+    return 1 if $file =~ /_____padding_file_/i;
+    return 1 if $file =~ /city9x\.com\.avi/i;
+    return undef;
+}
