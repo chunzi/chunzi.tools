@@ -33,6 +33,10 @@ install_script 'httpd-here';
 requires 'HTML::SimpleLinkExtor';
 install_script 'find-links';
 
+requires 'File::Copy';
+requires 'Getopt::Long';
+requires 'Path::Class';
+install_script 'fanta';
 
 install_script 'vpn';
 
