@@ -10,6 +10,7 @@ requires 'File::Slurp';
 requires 'Getopt::Long';
 requires 'Git::Repository';
 requires 'HTML::SimpleLinkExtor';
+requires 'Image::Size';
 requires 'Path::Class';
 requires 'Plack';
 requires 'Plack::Handler::Twiggy';

@@ -5,12 +5,30 @@ use warnings;
 use Class::Date qw/ date /;
 use Path::Class;
 use File::Copy;
+use Image::Size;
 
 my $pwd = dir '.';
 for my $file ( grep { -f } $pwd->children ){
+
+    # jpg files, with dimensions 612x612, mostly are instagram photos
+    if ( $file =~ /\.jpg/i ){
+        my ( $width, $height ) = imgsize("$file");
+        if ( $width == 612 and $height == 612 ){
+            move_file( $file, 'instagram' );
+            next;
+        }
+    }
+
+    # general files, split into days by last modify time
     my $mtime = date $file->stat->mtime;
     my $name = sprintf "%4d-%02d-%02d", $mtime->year, $mtime->month, $mtime->day;
-    my $folder = $pwd->subdir( $name );
+    move_file( $file, $name );
+}
+
+sub move_file {
+    my $file = shift;
+    my $name = shift || 'Untitled';
+    my $folder = $pwd->subdir($name);
     -d $folder or $folder->mkpath;
     my $newfile = $folder->file( $file->basename );
     printf STDERR "mv %s %s\n", $file, $newfile;
