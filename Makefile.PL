@@ -3,41 +3,29 @@ name 'chunzi.tools';
 license 'perl';
 version '0.01';
 
-
-install_script 'count';
-install_script 'random';
-install_script 'sort-patterns';
-
-
-requires 'WWW::Mechanize' => 0;
-install_script 'jandown';
-
-
+requires 'File::Copy';
 requires 'File::Find::Rule';
-requires 'File::Slurp';
-requires 'Path::Class';
-requires_external_bin 'pod2html';
-install_script 'pod2html-for';
-
-
 requires 'File::HomeDir';
+requires 'File::Slurp';
+requires 'Getopt::Long';
 requires 'Git::Repository';
+requires 'HTML::SimpleLinkExtor';
 requires 'Path::Class';
-install_script 'dust';
-
-
 requires 'Plack';
 requires 'Plack::Handler::Twiggy';
-install_script 'httpd-here';
+requires 'WWW::Mechanize' => 0;
+requires_external_bin 'pod2html';
 
-requires 'HTML::SimpleLinkExtor';
-install_script 'find-links';
-
-requires 'File::Copy';
-requires 'Getopt::Long';
-requires 'Path::Class';
+install_script 'album';
+install_script 'count';
+install_script 'dust';
 install_script 'fanta';
-
+install_script 'find-links';
+install_script 'httpd-here';
+install_script 'jandown';
+install_script 'pod2html-for';
+install_script 'random';
+install_script 'sort-patterns';
 install_script 'vpn';
 
 auto_install;

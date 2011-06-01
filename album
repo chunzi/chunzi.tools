@@ -1,0 +1,20 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use Class::Date qw/ date /;
+use Path::Class;
+use File::Copy;
+
+my $pwd = dir '.';
+for my $file ( grep { -f } $pwd->children ){
+    my $mtime = date $file->stat->mtime;
+    my $name = sprintf "%4d-%02d-%02d", $mtime->year, $mtime->month, $mtime->day;
+    my $folder = $pwd->subdir( $name );
+    -d $folder or $folder->mkpath;
+    my $newfile = $folder->file( $file->basename );
+    printf STDERR "mv %s %s\n", $file, $newfile;
+    move "$file", "$newfile";
+}
+
+exit;
