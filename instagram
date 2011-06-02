@@ -1,0 +1,76 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+use LWP::Simple;
+use JSON::Syck;
+use Encode;
+use Encode::JavaScript::UCS;
+use Class::Date qw/ date /;
+use Path::Class;
+use File::HomeDir;
+use Getopt::Long;
+use File::Slurp;
+
+binmode STDOUT, ":utf8";
+local $| = 1;
+
+my $client_id; # '0d02936066a3422591fe9e54c4865cb2';
+my $access_token; # '88563.0d02936.48f97302aece4c41808dff2ef03bb2a9';
+
+my $result = GetOptions (
+    "client_id=s" => \$client_id,
+    "access_token=s" => \$access_token,
+);
+
+my $conf_file = file( home(), '.instagram' )->stringify;
+if ( defined $client_id and defined $access_token ){
+    write_file( $conf_file, "$client_id\n$access_token\n" );
+}else{
+    ( $client_id, $access_token ) = grep { chomp } read_file( $conf_file ) if -f $conf_file;
+    die "Usage: $0 --client_id CLIENT_ID --access_token TOKEN\n"
+        unless ( defined $client_id and defined $access_token );
+}
+
+backup();
+
+sub backup {
+    my $url = shift;
+
+    # start point
+    $url ||= "https://api.instagram.com/v1/users/self/media/recent/?access_token=$access_token";
+    printf "Loading %s ...\n", $url;
+
+    my $json = get( $url );
+    my $hash = JSON::Syck::Load( $json );
+
+    my $keep_loading = 0;
+    my @photos = ();
+    for ( @{$hash->{'data'}} ){
+        my $id = $_->{'id'};
+        my $date = date $_->{'created_time'};
+        my $url = $_->{'images'}{'standard_resolution'}{'url'};
+        my $title = decode("JavaScript-UCS", $_->{'caption'}{'text'} || 'Untitled' );
+        my $filename = sprintf "%s - %04d-%02d-%02d - %s.jpg", $id, $date->year, $date->month, $date->day, $title;
+        my $file = file( $filename )->stringify;
+        if ( -f $file ){
+            printf "    %s\n", $filename;
+        }else{
+            printf "  A %s\n", $filename;
+            getstore( $url, $file );
+            $keep_loading = 1;
+        }
+    }
+
+    if ( $keep_loading ){
+        my $next_url = $hash->{'pagination'}{'next_url'};
+        return unless defined $next_url;
+        backup( $next_url );
+    }else{
+        print "END\n";
+    }
+}
+
+
+exit;
+
