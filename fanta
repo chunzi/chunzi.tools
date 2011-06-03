@@ -34,6 +34,7 @@ for my $dir ( grep { -d } $pwd->children ){
             my $ext = $1;
             $basename =~ s/\.$ext$//;
             $basename =~ s/^[^\@]*\@//;
+            $basename =~ s/^\[[^\[]*?\]-?//;
             $basename =~ s/\.H264\b//i;
 
             if ( $basename =~ /^([a-z]+)-?(\d+)$/i ){
