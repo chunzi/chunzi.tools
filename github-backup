@@ -1,0 +1,120 @@
+#!/usr/bin/env perl
+use strict;
+
+use Data::Dumper;
+use JSON::Syck qw/ Load /;
+use YAML::Syck qw/ LoadFile DumpFile /;
+use MIME::Base64;
+use HTTP::Request::Common;
+use WWW::Mechanize::GZip;
+use Class::Date qw/ -DateParse gmdate /;
+use Getopt::Long::Descriptive;
+use Config::GitLike::Git;
+use Path::Class;
+use IPC::Cmd qw/ can_run /;
+use Term::ANSIColor qw/ :constants /;
+local $Term::ANSIColor::AUTORESET = 1;
+
+#-----------------------
+# check git installed or not
+my $git = can_run("git") || die "no git found.\n";
+
+#-----------------------
+# options / usages
+my ( $opt, $usage ) = describe_options(
+    '%c %o',
+    [ 'login=s',  "the login name"],
+    [ 'token=s',  "the login token" ],
+    [ 'target=s', "the directory to backup, default is current directory", ],
+    [ 'help',     "print usage message and exit" ],
+);
+if ( $opt->help ){ print $usage->text; exit; }
+
+
+#-----------------------
+# try load login/token from gitconfig file
+my $login = $opt->login;
+my $token = $opt->token;
+if ( not defined $login ){
+    my $conf = new Config::GitLike::Git; $conf->load;
+    $login = $conf->get( key => 'github.user' );
+    $token = $conf->get( key => 'github.token' );
+}
+# backup to target directory, load the check file
+my $target = dir( $opt->target || '.' )->absolute;
+-d $target or $target->mkpath( 0, 0777 );
+my $checkfile = $target->file('.github-backup')->stringify;
+my $check = -f $checkfile ? LoadFile($checkfile) : {};
+
+
+#-----------------------
+# wget the repos, check and update
+my @repos = wget_repos( $login, $token );
+map { $_->{'date'} = gmdate( $_->{'pushed_at'} ) } @repos;
+
+for my $repos ( sort { $b->{'date'} <=> $a->{'date'} } @repos ){
+    my ( $date, $name ) = map { $repos->{$_} } qw/ date name /;
+    my $url = sprintf 'git@github.com:%s/%s.git', $login, $name;
+    my $epoch = $date->epoch;
+    my $gitdir = $target->subdir("$name.git")->absolute;
+
+    printf STDERR MAGENTA "==> "; 
+    printf STDERR GREEN "%s", $url;
+    printf STDERR "\n", $url;
+
+    my $updated = 1 if exists $check->{$url} and $check->{$url} == $epoch;
+    my $exists = 1 if -d $gitdir;
+    
+    if ( not $updated or not $exists ){
+        update_repos( $name, $url, $target, $gitdir );
+        $check->{$url} = $epoch;
+        DumpFile($checkfile, $check);
+    }
+}
+
+sub update_repos {
+    my $name = shift;
+    my $url = shift;
+    my $target = shift;
+    my $dir = shift;
+
+    chdir "$target" or die "Can't cd to $target: $!\n";
+    if ( -d $dir ){
+        chdir "$dir" or die "Can't cd to $dir: $!\n";
+        system("$git remote update") == 0 or die "Failed to execute git remote update: $?\n";
+    }else{
+        system("$git clone --mirror $url $dir") == 0 or die "Failed to execute git clone: $?\n";
+    }
+}
+
+
+sub wget_repos { 
+    my $login = shift; 
+    my $token = shift;
+    my $url = shift; 
+
+    $url ||= sprintf 'http://github.com/api/v2/json/repos/show/%s', $login;
+    my $basic = sprintf "%s/token:%s", $login, $token;
+    my $auth = sprintf 'Basic %s', encode_base64($basic);
+
+    my $req = HTTP::Request::Common::GET( $url );
+    $req->header( 'Authorization', $auth );
+
+    my $mech = new WWW::Mechanize::GZip;
+    my $res = $mech->request( $req );
+    die "login error!\n" if $res->code == 404;
+
+    my $json = $res->content();
+    my $hash = Load( $json );
+    my @repos = @{$hash->{'repositories'}};
+
+    my $next = $res->header('x-next');
+    if ( $next ){
+        my @next_repos = wget_repos( $login, $token, $next );
+        push @repos, @next_repos;
+    }
+
+    return @repos;
+}
+
+exit;
