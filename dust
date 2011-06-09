@@ -16,7 +16,7 @@ check( $home->subdir($_) ) for qw/ github gitme /;
 # home
 check( $home, bypass => [qw{
     Applications
-    cloud
+    Cloud
     Documents
     Dropbox
     Library
