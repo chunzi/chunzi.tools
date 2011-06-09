@@ -44,9 +44,7 @@ for my $file ( @files ){
     my $details = $extor->get_modules_with_details( $file );
     for my $detail ( @$details ){
         my $name = $detail->{'module'};
-        next if grep { $name eq $_ } 'strict';
-        next if $name eq 'warnings';
-        next if $name eq 'Data::Dumper';
+        next if grep { $name eq $_ } ( qw/ strict warnings lib /, 'Data::Dumper' );
         if ( $name eq 'base' ){
             map { $found->{$_}++ } @{$detail->{'imports'}};
         }else{
