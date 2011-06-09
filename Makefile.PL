@@ -52,6 +52,7 @@ install_script 'jandown';
 install_script 'pod2html-for';
 install_script 'random';
 install_script 'sort-patterns';
+install_script 'modules-used';
 install_script 'vpn';
 
 
