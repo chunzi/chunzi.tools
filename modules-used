@@ -1,0 +1,82 @@
+#!/usr/bin/env perl
+use strict;
+use Module::Extract::Use;
+use Getopt::Long::Descriptive;
+use Path::Class;
+use File::Find::Rule;
+use Term::ANSIColor qw/ :constants /;
+use Data::Dumper;
+local $Term::ANSIColor::AUTORESET = 1;
+
+#-------------------------
+# options / usage
+my ( $opt, $usage ) = describe_options(
+    '%c %o',
+    [ 'file|f=s@',     "find used modules in this file" ],
+    [ 'dir|d=s@',      "find used modules in this directory" ],
+    [ 'as_requires|r', "print the modules as requires statments in Makefile.PL" ],
+    [ 'verbose|v',     "print the files that scaned" ],
+    [ 'help',          "print usage message and exit" ],
+);
+if ( $opt->help ){ print $usage->text; exit; }
+
+
+#-------------------------
+# which files need scan
+my @files = ();
+if ( $opt->file or $opt->dir ){
+    push @files, 
+        @{$opt->file || []}, 
+        File::Find::Rule->file->name('*.pm')->in(@{$opt->dir || []});
+}else{
+    push @files,
+        File::Find::Rule->file->grep( qr/^#!.*\bperl/, [ sub { 1 } ] )->in(dir('.')->stringify),
+        File::Find::Rule->file->name('*.pm')->in(dir('lib')->stringify);
+}
+
+
+#-------------------------
+# find the modules the files depend on
+my $names = {};
+for my $file ( @files ){
+    my $found = {};
+    my $extor = Module::Extract::Use->new;
+    my $details = $extor->get_modules_with_details( $file );
+    for my $detail ( @$details ){
+        my $name = $detail->{'module'};
+        next if grep { $name eq $_ } 'strict';
+        next if $name eq 'warnings';
+        next if $name eq 'Data::Dumper';
+        if ( $name eq 'base' ){
+            map { $found->{$_}++ } @{$detail->{'imports'}};
+        }else{
+            $found->{$name}++;
+        }
+    }
+    my @names = sort keys %$found;
+    if ( $opt->verbose ){
+        printf STDERR MAGENTA "==> "; 
+        printf STDERR GREEN "%s", $file;
+        printf STDERR "\n";
+        map { printf "  %s\n", $_ } @names;
+    }
+    map { $names->{$_}++ } @names;
+}
+my @names = sort keys %$names;
+
+
+#-------------------------
+# print the summary, as a pure list / requires "Modules";
+if ( $opt->verbose ){
+    printf STDERR MAGENTA "==> "; 
+    printf STDERR YELLOW "as summary";
+    printf STDERR "\n";
+}
+if ( $opt->as_requires ){
+    map { printf qq{requires "%s";\n}, $_ } @names;
+}else{
+    map { printf "  %s\n", $_ } @names;
+}
+
+exit;
+

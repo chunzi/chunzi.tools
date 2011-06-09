@@ -60,7 +60,7 @@ for my $repos ( sort { $b->{'date'} <=> $a->{'date'} } @repos ){
 
     printf STDERR MAGENTA "==> "; 
     printf STDERR GREEN "%s", $url;
-    printf STDERR "\n", $url;
+    printf STDERR "\n";
 
     my $updated = 1 if exists $check->{$url} and $check->{$url} == $epoch;
     my $exists = 1 if -d $gitdir;

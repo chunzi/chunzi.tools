@@ -15,8 +15,8 @@ use File::Slurp;
 binmode STDOUT, ":utf8";
 local $| = 1;
 
-my $client_id; # '0d02936066a3422591fe9e54c4865cb2';
-my $access_token; # '88563.0d02936.48f97302aece4c41808dff2ef03bb2a9';
+my $client_id;
+my $access_token;
 
 my $result = GetOptions (
     "client_id=s" => \$client_id,
