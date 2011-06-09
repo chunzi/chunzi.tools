@@ -73,7 +73,7 @@ if ( $opt->verbose ){
     printf STDERR "\n";
 }
 if ( $opt->as_requires ){
-    map { printf qq{requires "%s";\n}, $_ } @names;
+    map { printf qq{requires '%s';\n}, $_ } @names;
 }else{
     map { printf "  %s\n", $_ } @names;
 }

@@ -8,30 +8,31 @@ version '0.03';
 requires_external_bin 'pod2html';
 
 # from perl scripts / modules
-requires "Class::Date";
-requires "Config::GitLike::Git";
-requires "Encode";
-requires "Encode::JavaScript::UCS";
-requires "File::Copy";
-requires "File::Find::Rule";
-requires "File::HomeDir";
-requires "File::Slurp";
-requires "Getopt::Long";
-requires "Getopt::Long::Descriptive";
-requires "Git::Repository";
-requires "HTML::SimpleLinkExtor";
-requires "HTTP::Request::Common";
-requires "IPC::Cmd";
-requires "Image::Size";
-requires "JSON::Syck";
-requires "LWP::Simple";
-requires "MIME::Base64";
-requires "Module::Extract::Use";
-requires "Path::Class";
-requires "Term::ANSIColor";
-requires "WWW::Mechanize";
-requires "WWW::Mechanize::GZip";
-requires "YAML::Syck";
+requires 'Class::Date';
+requires 'Config::GitLike::Git';
+requires 'Encode';
+requires 'Encode::JavaScript::UCS';
+requires 'File::Copy';
+requires 'File::Find::Rule';
+requires 'File::HomeDir';
+requires 'File::Slurp';
+requires 'Getopt::Long';
+requires 'Getopt::Long::Descriptive';
+requires 'Git::Repository';
+requires 'HTML::SimpleLinkExtor';
+requires 'HTTP::Request::Common';
+requires 'IPC::Cmd';
+requires 'Image::Size';
+requires 'JSON::Syck';
+requires 'LWP::Simple';
+requires 'MIME::Base64';
+requires 'Module::Extract::Use';
+requires 'Path::Class';
+requires 'Term::ANSIColor';
+requires 'WWW::Mechanize';
+requires 'WWW::Mechanize::GZip';
+requires 'YAML::Syck';
+
 
 # from shell scripts
 requires 'Plack';
@@ -55,4 +56,4 @@ install_script 'vpn';
 
 
 auto_install;
-WiteAll;
+WriteAll;
