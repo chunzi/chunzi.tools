@@ -1,18 +1,21 @@
 #!/usr/bin/env perl
 use strict;
+use warnings;
+our $VERSION = '0.01';
 
-use Data::Dumper;
-use JSON::Syck qw/ Load /;
-use YAML::Syck qw/ LoadFile DumpFile /;
-use MIME::Base64;
-use HTTP::Request::Common;
-use WWW::Mechanize::GZip;
 use Class::Date qw/ -DateParse gmdate /;
-use Getopt::Long::Descriptive;
 use Config::GitLike::Git;
-use Path::Class;
+use Data::Dumper;
+use Getopt::Long::Descriptive;
+use HTTP::Request::Common;
 use IPC::Cmd qw/ can_run /;
+use JSON::Syck qw/ Load /;
+use MIME::Base64;
+use Path::Class;
 use Term::ANSIColor qw/ :constants /;
+use WWW::Mechanize::GZip;
+use YAML::Syck qw/ LoadFile DumpFile /;
+
 local $Term::ANSIColor::AUTORESET = 1;
 
 #-----------------------
@@ -50,44 +53,61 @@ my $check = -f $checkfile ? LoadFile($checkfile) : {};
 #-----------------------
 # wget the repos, check and update
 my @repos = wget_repos( $login, $token );
+
+# attach date object
 map { $_->{'date'} = gmdate( $_->{'pushed_at'} ) } @repos;
 
+# found the local git repos, some may removed from github, note the user later
+my $gitdir_local = {};
+map { $gitdir_local->{$_->stringify}++ } grep { /\.git$/ } grep { -d } $target->children;
+
+
+#-----------------------
+# check the repos, newly the first
 for my $repos ( sort { $b->{'date'} <=> $a->{'date'} } @repos ){
+
     my ( $date, $name ) = map { $repos->{$_} } qw/ date name /;
     my $url = sprintf 'git@github.com:%s/%s.git', $login, $name;
     my $epoch = $date->epoch;
     my $gitdir = $target->subdir("$name.git")->absolute;
 
-    printf STDERR MAGENTA "==> "; 
-    printf STDERR GREEN "%s", $url;
-    printf STDERR "\n";
+    delete $gitdir_local->{"$gitdir"};
+
+    print STDERR MAGENTA "==> "; 
+    print STDERR GREEN "$url";
+    print STDERR "\n";
 
     my $updated = 1 if exists $check->{$url} and $check->{$url} == $epoch;
     my $exists = 1 if -d $gitdir;
     
     if ( not $updated or not $exists ){
-        update_repos( $name, $url, $target, $gitdir );
+        # alreay cloned, just get into it and git remote update
+        if ( -d $gitdir ){
+            chdir "$gitdir" or die "Can't cd to $gitdir: $!\n";
+            system("$git remote update") == 0 or die "Failed to execute git remote update: $?\n";
+
+        # or just clone it as mirrored repos
+        }else{
+            chdir "$target" or die "Can't cd to $target: $!\n";
+            system("$git clone --mirror $url $gitdir") == 0 or die "Failed to execute git clone: $?\n";
+        }
         $check->{$url} = $epoch;
         DumpFile($checkfile, $check);
     }
 }
 
-sub update_repos {
-    my $name = shift;
-    my $url = shift;
-    my $target = shift;
-    my $dir = shift;
-
-    chdir "$target" or die "Can't cd to $target: $!\n";
-    if ( -d $dir ){
-        chdir "$dir" or die "Can't cd to $dir: $!\n";
-        system("$git remote update") == 0 or die "Failed to execute git remote update: $?\n";
-    }else{
-        system("$git clone --mirror $url $dir") == 0 or die "Failed to execute git clone: $?\n";
-    }
+#-----------------------
+# Show the removed repos at Github
+for my $path ( sort keys %$gitdir_local ){
+    print STDERR MAGENTA "==> Removed from Github: "; 
+    print STDERR GREEN "$path";
+    print STDERR "\n";
 }
+exit(0);
 
 
+
+#-----------------------
 sub wget_repos { 
     my $login = shift; 
     my $token = shift;
