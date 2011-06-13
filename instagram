@@ -9,20 +9,32 @@ use Encode::JavaScript::UCS;
 use Class::Date qw/ date /;
 use Path::Class;
 use File::HomeDir;
-use Getopt::Long;
+use Getopt::Long::Descriptive;
 use File::Slurp;
 
 binmode STDOUT, ":utf8";
 local $| = 1;
 
-my $client_id;
-my $access_token;
 
-my $result = GetOptions (
-    "client_id=s" => \$client_id,
-    "access_token=s" => \$access_token,
+#---------------------------
+# options / usage
+my ( $opt, $usage ) = describe_options(
+    '%c %o',
+    [ 'client_id=s',     "the login name"],
+    [ 'access_token=s',  "the login token" ],
+    [ 'target=s',        "the directory to backup, default is current directory", ],
+    [ 'help',            "print usage message and exit" ],
 );
+if ( $opt->help ){ print $usage->text; exit; }
 
+
+#---------------------------
+# user / token from cmd options
+my $client_id = $opt->client_id;
+my $access_token = $opt->access_token;
+
+# or just from ~/.instagram file
+# first line is the client_id and the second line is the access token
 my $conf_file = file( home(), '.instagram' )->stringify;
 if ( defined $client_id and defined $access_token ){
     write_file( $conf_file, "$client_id\n$access_token\n" );
@@ -32,8 +44,20 @@ if ( defined $client_id and defined $access_token ){
         unless ( defined $client_id and defined $access_token );
 }
 
-backup();
 
+#---------------------------
+# which directory to backup, default is current directory
+my $target = dir( $opt->target || '.' );
+-d $target or $target->mkpath( 0, 0777 );
+
+
+#---------------------------
+# well, let's backup my instagram photos
+backup();
+exit(0);
+
+
+#---------------------------
 sub backup {
     my $url = shift;
 
@@ -52,7 +76,7 @@ sub backup {
         my $url = $_->{'images'}{'standard_resolution'}{'url'};
         my $title = decode("JavaScript-UCS", $_->{'caption'}{'text'} || 'Untitled' );
         my $filename = sprintf "%s - %04d-%02d-%02d - %s.jpg", $id, $date->year, $date->month, $date->day, $title;
-        my $file = file( $filename )->stringify;
+        my $file = $target->file( $filename )->stringify;
         if ( -f $file ){
             printf "    %s\n", $filename;
         }else{
@@ -72,5 +96,4 @@ sub backup {
 }
 
 
-exit;
 
