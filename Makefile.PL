@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.05';
+version '0.06';
 
 
 #---------------------------
@@ -13,6 +13,7 @@ requires 'Config::GitLike::Git';
 requires 'Encode';
 requires 'Encode::JavaScript::UCS';
 requires 'File::Copy';
+requires 'File::Copy::Recursive';
 requires 'File::Find::Rule';
 requires 'File::HomeDir';
 requires 'File::Slurp';
@@ -33,7 +34,6 @@ requires 'WWW::Mechanize';
 requires 'WWW::Mechanize::GZip';
 requires 'YAML::Syck';
 
-
 # from shell scripts
 requires 'Plack';
 requires 'Plack::Handler::Twiggy';
@@ -49,11 +49,11 @@ install_script 'github-backup';
 install_script 'httpd-here';
 install_script 'instagram';
 install_script 'jandown';
+install_script 'modules-used';
+install_script 'pick';
 install_script 'pod2html-for';
 install_script 'random';
 install_script 'sort-patterns';
-install_script 'modules-used';
-install_script 'vpn';
 
 
 auto_install;
