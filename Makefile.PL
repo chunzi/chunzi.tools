@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.07';
+version '0.08';
 
 
 #---------------------------
@@ -54,6 +54,7 @@ install_script 'pick';
 install_script 'pod2html-for';
 install_script 'random';
 install_script 'sort-patterns';
+install_script 'suck';
 
 
 auto_install;

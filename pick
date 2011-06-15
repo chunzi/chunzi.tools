@@ -40,6 +40,7 @@ my @albums = grep { -d } $from->children;
 my $count = scalar @albums;
 die "No albums found in $from\n" if $count == 0;
 
+$just = $count if $just > $count;
 my $picked; $picked->{int rand($count)}++ while keys %$picked < $just;
 
 
