@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.08';
+version '0.09';
 
 
 #---------------------------
@@ -14,6 +14,7 @@ requires 'Encode';
 requires 'Encode::JavaScript::UCS';
 requires 'File::Copy';
 requires 'File::Copy::Recursive';
+requires 'Lingua::Han::PinYin';
 requires 'File::Find::Rule';
 requires 'File::HomeDir';
 requires 'File::Slurp';
