@@ -1,22 +1,42 @@
 #!/usr/bin/env perl
 
-# download a torrent file from jandown.com
-
 use strict;
 use warnings;
-use WWW::Mechanize;
+our $VERSION = '0.02';
+
 use File::Slurp;
+use IPC::Cmd qw/ can_run /;
+use WWW::Mechanize;
 
+#--------------------------
+# get the url from mac's clipboard
 my $url = shift;
-die "usage: $0 url\n" unless defined $url;
+if ( not defined $url and can_run('pbpaste') ){
+    $url = `pbpaste`;
+    chomp $url;
+}
+die "usage: $0 [url]\n" unless defined $url;
 
+
+#--------------------------
+# parse the ref string
 my ( $hash ) = ( $url =~ /\?(?:hash|ref)=([a-zA-Z0-9]{10,50})$/ );
-my $filename = sprintf '%s.torrent', $hash;
+my $filename = sprintf '%s.torrent', lc $hash;
 
-my $m = WWW::Mechanize->new;
-$m->get($url);
-$m->submit_form( form_number => 1 );
-write_file( $filename, $m->content );
+
+#--------------------------
+# visit the url, click the form
+my $mech = WWW::Mechanize->new;
+$mech->get($url);
+$mech->submit_form( form_number => 1 );
+
+
+#--------------------------
+# save the torrent file
+write_file( $filename, $mech->content );
 die "File not saved.\n" unless -f $filename;
-
 printf "Saved as %s (%.1fK)\n", $filename, ( -s $filename ) / 1000 ;
+
+
+exit(0);
+
