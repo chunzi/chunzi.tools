@@ -1,5 +1,8 @@
 #!/usr/bin/env perl
 use strict;
+use warnings;
+our $VERSION = '0.02';
+
 use Module::Extract::Use;
 use Getopt::Long::Descriptive;
 use Path::Class;
@@ -15,6 +18,7 @@ my ( $opt, $usage ) = describe_options(
     [ 'file|f=s@',     "find used modules in this file" ],
     [ 'dir|d=s@',      "find used modules in this directory" ],
     [ 'as_requires|r', "print the modules as requires statments in Makefile.PL" ],
+    [ 'as_keyvalue|k', "print the modules as name => 0 in Makefile.PL" ],
     [ 'verbose|v',     "print the files that scaned" ],
     [ 'help',          "print usage message and exit" ],
 );
@@ -72,6 +76,8 @@ if ( $opt->verbose ){
 }
 if ( $opt->as_requires ){
     map { printf qq{requires '%s';\n}, $_ } @names;
+}elsif ( $opt->as_keyvalue ){
+    map { printf qq{'%s' => 0,\n}, $_ } @names;
 }else{
     map { printf "  %s\n", $_ } @names;
 }
