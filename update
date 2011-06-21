@@ -4,4 +4,5 @@ brew update
 cpanm --self-upgrade
 cpanm Dancer
 cpanm App::perlbrew
+cd ~/Cloud; make
 
