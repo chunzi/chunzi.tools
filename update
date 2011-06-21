@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-brew udpate
+brew update
 cpanm --self-upgrade
 cpanm Dancer
 cpanm App::perlbrew
