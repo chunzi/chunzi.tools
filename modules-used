@@ -1,14 +1,15 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
-use Module::Extract::Use;
-use Getopt::Long::Descriptive;
-use Path::Class;
 use File::Find::Rule;
+use Getopt::Long::Descriptive;
+use Module::CoreList;
+use Module::Extract::Use;
+use Path::Class;
 use Term::ANSIColor qw/ :constants /;
-use Data::Dumper;
+
 local $Term::ANSIColor::AUTORESET = 1;
 
 #-------------------------
@@ -48,10 +49,10 @@ for my $file ( @files ){
     my $details = $extor->get_modules_with_details( $file );
     for my $detail ( @$details ){
         my $name = $detail->{'module'};
-        next if grep { $name eq $_ } ( qw/ strict warnings lib /, 'Data::Dumper' );
         if ( $name eq 'base' ){
-            map { $found->{$_}++ } @{$detail->{'imports'}};
+            map { $found->{$_}++ } grep { ! $Module::CoreList::version{"$]"}->{$_} } @{$detail->{'imports'}};
         }else{
+            next if exists $Module::CoreList::version{"$]"}->{$name};
             $found->{$name}++;
         }
     }
