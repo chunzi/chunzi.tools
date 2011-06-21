@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+brew udpate
+cpanm --self-upgrade
+cpanm Dancer
+cpanm App::perlbrew
+
