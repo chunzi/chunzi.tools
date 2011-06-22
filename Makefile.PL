@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.14';
+version '0.15';
 
 
 #---------------------------
@@ -34,6 +34,8 @@ requires 'Term::ANSIColor';
 requires 'WWW::Mechanize';
 requires 'WWW::Mechanize::GZip';
 requires 'YAML::Syck';
+requires 'Text::Diff::Parser';
+requires 'Algorithm::Diff';
 
 # from shell scripts
 requires 'Plack';
@@ -57,6 +59,7 @@ install_script 'random';
 install_script 'sort-patterns';
 install_script 'suck';
 install_script 'update';
+install_script 'diff2html';
 
 
 auto_install;

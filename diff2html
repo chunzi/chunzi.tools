@@ -1,0 +1,197 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+our $VERSION = '0.01';
+
+use Text::Diff::Parser;
+use Algorithm::Diff;
+
+
+#-------------------------------
+my @lines = <>;
+my $diff = join '', @lines;
+
+my $parser = Text::Diff::Parser->new;
+$parser->parse( $diff );
+my @changes = $parser->changes;
+exit unless @changes;
+
+
+#-------------------------------
+# print html header
+print qq{
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'>
+<style>
+div.container { width: 90%; margin: 0 auto; }
+div.filename { font-family: arial; margin: 2em 0 0.5em; }
+table.diff { border-top: solid 1px #ddd; border-left: solid 1px #ddd; border-bottom: solid 1px #ddd; }
+table.diff td { 
+    border-right: solid 1px #DDDDDD;
+    background: #F8F8FF;
+    font: 0.8em 'Bitstream Vera Sans Mono','Courier',monospace; 
+    line-height: 1.4em;
+}
+table.diff td.line { background: #ECECEC; color: #AAAAAA; text-align: right; vertical-align: top; padding: 0 0.5em; }
+table.diff td.head { background: #EAF2F5; color: #999999; }
+table.diff td pre { line-height: 1.2em; margin: 0; font-size: 1.3em; padding: 0.3em; }
+table.diff td.remove { background: #FFDDDD; color: #000000; }
+table.diff td.add { background: #DDFFDD; color: #000000; }
+table.diff td span.ins { background: #AAFFAA; color: #000000; }
+table.diff td span.del { background: #FFAAAA; color: #000000; }
+pre {
+    white-space: pre-wrap;       / css-3 /
+    white-space: -moz-pre-wrap;  / Mozilla, since 1999 /
+    white-space: -pre-wrap;      / Opera 4-6 /
+    white-space: -o-pre-wrap;    / Opera 7 /
+    word-wrap: break-word;       / Internet Explorer 5.5+ /
+} 
+</style>
+</head>
+<body>
+<div class="container">
+};
+
+
+#-------------------------------
+my $files;
+map { 
+    my $filename = $_->filename1;
+    $filename =~ s/^a\///;
+    push @{$files->{$filename}}, $_; 
+} @changes;
+my @filenames = sort keys %$files;
+
+printf qq{<ul class="filenames">\n};
+for my $filename ( @filenames ){
+    printf qq{<li><a href="#%s">%s</a></li>\n}, $filename, $filename;
+}
+printf qq{</ul>\n};
+
+
+for my $filename ( @filenames ){
+
+    printf qq{<div class="filename"><a name="%s"></a>%s</div>\n}, $filename, $filename;
+    print qq{<table class="diff" cellpadding="0" cellspacing="0" border="0">};
+    my @rows;
+    my $changed_lines;
+
+    my $last_function;
+    for my $change ( @{$files->{$filename}} ){
+
+        #--------------------
+        # push head into rows
+        my $head = sprintf qq{<tr><td class="line">...</td><td class="line">...</td>\n<td class="head"><pre>@@ -%d,%d +%d,%d @@ %s</pre></td></tr>\n}, 
+            map { escape( $change->{$_} ) } qw/ line1 size1 line2 size2 function /;
+        unless ( defined $last_function and $last_function eq $change->{'function'} ){
+            push @rows, { html => $head }; 
+            $last_function = $change->{'function'};
+        }
+
+        #--------------------
+        # push lines into rows
+        for my $offset ( 0 .. $change->size - 1 ) {
+            my $text = $change->text( $offset );
+            if ( $change->type eq '' ){
+                my $line = $change->line1 + $offset;
+                push @rows, { line => $line, class => "same", text => $text };
+
+            }elsif ( $change->type eq 'REMOVE' ){
+                my $line = $change->line1 + $offset;
+                push @rows, { line => $line, class => "remove", text => $text };
+                $changed_lines->{$line}{'remove'} = $text;
+
+            }elsif ( $change->type eq 'ADD' ){
+                my $line = $change->line2 + $offset;
+                push @rows, { line => $line, class => "add", text => $text };
+                $changed_lines->{$line}{'add'} = $text;
+            }
+        }
+    }
+
+    for my $line ( keys %$changed_lines ){
+
+        my @args = map {
+            #my @tmp = split qr/(?:(?<!\p{IsWord})(?=\p{IsWord})|(?<!\p{IsSpace})(?=\p{IsSpace})|(?<!\p{IsPunct})(?=\p{IsPunct}))/msx, $_;
+            my @tmp = split qr/(?:(?<!\p{IsWord})(?=\p{IsWord}))/msx, $_;
+            \@tmp;
+        } map { $changed_lines->{$line}{$_} || '' } qw/ remove add /;
+        
+        
+        my $diff = Algorithm::Diff->new( @args );
+        my $remove = ''; my $add = '';
+        while ( $diff->Next ) {
+            if ( my @same = $diff->Same ) {
+                my $same = escape( join '', @same );
+                $remove .= $same; $add .= $same;
+
+            } else {
+                if ( my @del = $diff->Items(1) ) {
+                    $remove .= '<span class="del">' . escape( join '', @del ) . '</span>';
+                }
+                if ( my @ins = $diff->Items(2) ) {
+                    $add .= '<span class="ins">' . escape( join '', @ins ) . '</span>';
+                }
+            }
+        }
+        $changed_lines->{$line}{'remove_html'} = $remove;
+        $changed_lines->{$line}{'add_html'} = $add;
+    }
+
+
+    for my $row ( @rows ){
+        if ( exists $row->{'html'} ){
+            print $row->{'html'};
+        
+        }else{
+            my $class = $row->{'class'};
+            my $line = $row->{'line'};
+            my $line1 = $line; 
+            my $line2 = $line;
+            my $html;
+
+            if ( $class eq 'remove' ){
+                $line1 = $line;
+                $line2 = '';
+                $html = sprintf "-%s", $changed_lines->{$line}{'remove_html'};
+            }elsif( $class eq 'add' ){
+                $line1 = '';
+                $line2 = $line;
+                $html = sprintf "+%s", $changed_lines->{$line}{'add_html'};
+            }elsif( $class eq 'same' ){
+                $html = sprintf " %s", escape( $row->{'text'} );
+            }
+
+            printf qq{<tr><td class="line">%s</td><td class="line">%s</td>\n}, $line1, $line2;
+            printf qq{<td class="changes %s"><pre>%s</pre></td></tr>\n}, $row->{'class'}, $html;
+        }
+    }
+
+
+    print qq{</table>\n};
+}
+
+#-------------------------------
+print qq{
+</div>
+</body>
+</html>
+};
+
+
+
+sub escape {
+    my $text = shift;
+    for ($text) {
+        s/&/&amp;/g;
+        s/</&lt;/g;
+        s/>/&gt;/g;
+        s/"/&quot;/g;
+    }
+    $text;
+}
+
+
+exit(0);
