@@ -1,20 +1,20 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.15';
+version '0.16';
 
 
 #---------------------------
 requires_external_bin 'pod2html';
 
 # from perl scripts / modules
+requires 'Algorithm::Diff';
 requires 'Class::Date';
 requires 'Config::GitLike::Git';
 requires 'Encode';
 requires 'Encode::JavaScript::UCS';
 requires 'File::Copy';
 requires 'File::Copy::Recursive';
-requires 'Lingua::Han::PinYin';
 requires 'File::Find::Rule';
 requires 'File::HomeDir';
 requires 'File::Slurp';
@@ -27,15 +27,16 @@ requires 'IPC::Cmd';
 requires 'Image::Size';
 requires 'JSON::Syck';
 requires 'LWP::Simple';
+requires 'Lingua::Han::PinYin';
+requires 'List::MoreUtils';
 requires 'MIME::Base64';
 requires 'Module::Extract::Use';
 requires 'Path::Class';
 requires 'Term::ANSIColor';
+requires 'Text::Diff::Parser';
 requires 'WWW::Mechanize';
 requires 'WWW::Mechanize::GZip';
 requires 'YAML::Syck';
-requires 'Text::Diff::Parser';
-requires 'Algorithm::Diff';
 
 # from shell scripts
 requires 'Plack';

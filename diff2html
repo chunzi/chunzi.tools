@@ -1,16 +1,22 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Text::Diff::Parser;
 use Algorithm::Diff;
+use List::MoreUtils qw/ pairwise /;
+no warnings qw/ once /;
 
 
 #-------------------------------
+# read diff from stdin
 my @lines = <>;
 my $diff = join '', @lines;
 
+
+#-------------------------------
+# parse the changes
 my $parser = Text::Diff::Parser->new;
 $parser->parse( $diff );
 my @changes = $parser->changes;
@@ -18,7 +24,7 @@ exit unless @changes;
 
 
 #-------------------------------
-# print html header
+# print the html header
 print qq{
 <!DOCTYPE html>
 <html>
@@ -34,9 +40,9 @@ table.diff td {
     font: 0.8em 'Bitstream Vera Sans Mono','Courier',monospace; 
     line-height: 1.4em;
 }
-table.diff td.line { background: #ECECEC; color: #AAAAAA; text-align: right; vertical-align: top; padding: 0 0.5em; }
+table.diff td.line { background: #ECECEC; color: #AAAAAA; text-align: right; vertical-align: top; padding: 0 0.3em; }
 table.diff td.head { background: #EAF2F5; color: #999999; }
-table.diff td pre { line-height: 1.2em; margin: 0; font-size: 1.3em; padding: 0.3em; }
+table.diff td pre { margin: 0; font-size: 1.3em; padding: 0 0.3em; }
 table.diff td.remove { background: #FFDDDD; color: #000000; }
 table.diff td.add { background: #DDFFDD; color: #000000; }
 table.diff td span.ins { background: #AAFFAA; color: #000000; }
@@ -56,6 +62,8 @@ pre {
 
 
 #-------------------------------
+# one diff output may contains many file's changes
+# find them and dump the diff one by one
 my $files;
 map { 
     my $filename = $_->filename1;
@@ -64,6 +72,9 @@ map {
 } @changes;
 my @filenames = sort keys %$files;
 
+
+#-------------------------------
+# first, the file list
 printf qq{<ul class="filenames">\n};
 for my $filename ( @filenames ){
     printf qq{<li><a href="#%s">%s</a></li>\n}, $filename, $filename;
@@ -71,117 +82,155 @@ for my $filename ( @filenames ){
 printf qq{</ul>\n};
 
 
+#-------------------------------
+# next, the diff table for each file
 for my $filename ( @filenames ){
 
+    #-------------------------------
+    # the filename
     printf qq{<div class="filename"><a name="%s"></a>%s</div>\n}, $filename, $filename;
-    print qq{<table class="diff" cellpadding="0" cellspacing="0" border="0">};
-    my @rows;
-    my $changed_lines;
 
+    #-------------------------------
+    # the table
+    print qq{<table class="diff" cellpadding="0" cellspacing="0" border="0">};
+
+    #-------------------------------
+    # collect the rows first, then do words diff, and print the html rows
+    my @rows;
     my $last_function;
+    my @last_removed = ();
+    my @last_added = ();
+    my @rows_diff;
     for my $change ( @{$files->{$filename}} ){
 
         #--------------------
         # push head into rows
-        my $head = sprintf qq{<tr><td class="line">...</td><td class="line">...</td>\n<td class="head"><pre>@@ -%d,%d +%d,%d @@ %s</pre></td></tr>\n}, 
-            map { escape( $change->{$_} ) } qw/ line1 size1 line2 size2 function /;
+        my $head = sprintf qq{
+            <tr><td class="line">...</td><td class="line">...</td>
+            <td class="head"><pre>@@ -%d,%d +%d,%d @@ %s</pre></td></tr>
+        }, map { escape( $change->{$_} ) } qw/ line1 size1 line2 size2 function /;
+        # just once
         unless ( defined $last_function and $last_function eq $change->{'function'} ){
-            push @rows, { html => $head }; 
+            push @rows, { head => $head }; 
             $last_function = $change->{'function'};
         }
 
         #--------------------
         # push lines into rows
         for my $offset ( 0 .. $change->size - 1 ) {
+
+            my $line1 = $change->line1 + $offset;
+            my $line2 = $change->line2 + $offset;
             my $text = $change->text( $offset );
-            if ( $change->type eq '' ){
-                my $line = $change->line1 + $offset;
-                push @rows, { line => $line, class => "same", text => $text };
+            my $class = lc $change->type || 'same';
 
-            }elsif ( $change->type eq 'REMOVE' ){
-                my $line = $change->line1 + $offset;
-                push @rows, { line => $line, class => "remove", text => $text };
-                $changed_lines->{$line}{'remove'} = $text;
+            my $row = { line1 => $line1, line2 => $line2, class => $class, text => $text };
+            push @rows, $row;
 
-            }elsif ( $change->type eq 'ADD' ){
-                my $line = $change->line2 + $offset;
-                push @rows, { line => $line, class => "add", text => $text };
-                $changed_lines->{$line}{'add'} = $text;
+            #--------------------------
+            # push the removed / added lines into groups,
+            # so that we can diff them line by line, words by words later
+            # not support the 'modify' change type yet.
+            push @last_removed, $row if $class eq 'remove';
+            push @last_added, $row if $class eq 'add';
+            if ( $class eq 'same' ){
+                if ( @last_removed or @last_added ){
+                    push @rows_diff, [ [@last_removed], [@last_added] ];
+                    @last_removed = ();
+                    @last_added = ();
+                }
             }
         }
     }
 
-    for my $line ( keys %$changed_lines ){
+    #--------------------
+    # find the words diff 
+    for ( @rows_diff ){
 
-        my @args = map {
-            #my @tmp = split qr/(?:(?<!\p{IsWord})(?=\p{IsWord})|(?<!\p{IsSpace})(?=\p{IsSpace})|(?<!\p{IsPunct})(?=\p{IsPunct}))/msx, $_;
-            my @tmp = split qr/(?:(?<!\p{IsWord})(?=\p{IsWord}))/msx, $_;
-            \@tmp;
-        } map { $changed_lines->{$line}{$_} || '' } qw/ remove add /;
-        
-        
-        my $diff = Algorithm::Diff->new( @args );
-        my $remove = ''; my $add = '';
-        while ( $diff->Next ) {
-            if ( my @same = $diff->Same ) {
-                my $same = escape( join '', @same );
-                $remove .= $same; $add .= $same;
+        # every change block may has different line numbers
+        # pairwise one by one
+        my ( $removed_lines, $added_lines ) = @$_;
+        my @lines = pairwise { [ $a, $b ] } @$removed_lines, @$added_lines;
 
-            } else {
-                if ( my @del = $diff->Items(1) ) {
-                    $remove .= '<span class="del">' . escape( join '', @del ) . '</span>';
+        # pick the same offset line, and split as words, do the diff, join as html 
+        for ( @lines ){
+            my ( $removed_line, $added_line ) = @$_;
+
+            # the updated regex borrowed from:
+            # http://cpansearch.perl.org/src/MRAMBERG/MojoMojo-1.04/lib/MojoMojo/WordDiff.pm
+            my @args = map {
+                my @words = [];
+                if ( defined $_ ){
+                    @words = split qr/(?:(?<!\p{IsWord})(?=\p{IsWord}))/msx, $_->{'text'};
                 }
-                if ( my @ins = $diff->Items(2) ) {
-                    $add .= '<span class="ins">' . escape( join '', @ins ) . '</span>';
+                \@words;
+            } @$_;
+        
+            # diff
+            my $diff = Algorithm::Diff->new( @args );
+            my $remove = ''; my $add = '';
+            while ( $diff->Next ) {
+                if ( my @same = $diff->Same ) {
+                    my $same = escape( join '', @same );
+                    $remove .= $same; 
+                    $add .= $same;
+
+                } else {
+                    if ( my @del = $diff->Items(1) ) {
+                        $remove .= '<span class="del">' . escape( join '', @del ) . '</span>';
+                    }
+                    if ( my @ins = $diff->Items(2) ) {
+                        $add .= '<span class="ins">' . escape( join '', @ins ) . '</span>';
+                    }
                 }
             }
+
+            # attach the html version into the row node
+            $removed_line->{'html'} = $remove if defined $removed_line;
+            $added_line->{'html'} = $add if defined $added_line;
         }
-        $changed_lines->{$line}{'remove_html'} = $remove;
-        $changed_lines->{$line}{'add_html'} = $add;
     }
 
-
+    #-------------------------------
+    # well, print the rows
     for my $row ( @rows ){
-        if ( exists $row->{'html'} ){
-            print $row->{'html'};
+
+        if ( exists $row->{'head'} ){
+            print $row->{'head'};
         
         }else{
             my $class = $row->{'class'};
-            my $line = $row->{'line'};
-            my $line1 = $line; 
-            my $line2 = $line;
-            my $html;
+            my $line1 = $row->{'line1'};
+            my $line2 = $row->{'line2'};
 
+            my $html;
             if ( $class eq 'remove' ){
-                $line1 = $line;
                 $line2 = '';
-                $html = sprintf "-%s", $changed_lines->{$line}{'remove_html'};
+                $html = sprintf "-%s", $row->{'html'};
             }elsif( $class eq 'add' ){
                 $line1 = '';
-                $line2 = $line;
-                $html = sprintf "+%s", $changed_lines->{$line}{'add_html'};
+                $html = sprintf "+%s", $row->{'html'};
             }elsif( $class eq 'same' ){
                 $html = sprintf " %s", escape( $row->{'text'} );
             }
 
             printf qq{<tr><td class="line">%s</td><td class="line">%s</td>\n}, $line1, $line2;
-            printf qq{<td class="changes %s"><pre>%s</pre></td></tr>\n}, $row->{'class'}, $html;
+            printf qq{<td class="changes %s"><pre>%s</pre></td></tr>\n}, $class, $html;
         }
     }
-
-
+    # close the table
     print qq{</table>\n};
 }
 
 #-------------------------------
-print qq{
-</div>
-</body>
-</html>
-};
+# html footer
+print qq{</div></body></html>};
+exit(0);
 
 
 
+#-------------------------------
+# just escape the html entities
 sub escape {
     my $text = shift;
     for ($text) {
@@ -194,4 +243,3 @@ sub escape {
 }
 
 
-exit(0);
