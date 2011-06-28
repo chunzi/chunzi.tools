@@ -1,0 +1,72 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+our $VERSION = '0.01';
+
+use List::Util qw/ shuffle /;
+use File::Slurp;
+
+my $min_time = 999999;
+my $min_server;
+my $min_addr;
+my $file_skip = 'top-phobos.skip';
+my $file_host = 'top-phobos.host';
+my $skip = {}; map { chomp; $skip->{$_}++; } read_file( $file_skip ) if -f $file_skip;
+my @servers = map { sprintf "a%s.phobos.apple.com", $_ } (1..2000);
+
+# check out last min_addr from host file
+if ( -f $file_host ){
+    my @lines = read_file( $file_host );
+    ( $min_addr ) = split /\s+/, $lines[0];
+}
+
+local $SIG{'INT'} = sub { save_hosts( $min_addr ); exit; };
+
+for my $server ( shuffle @servers ){
+    my $report = `ping -c4 $server`;
+    next unless $report =~ /0\.0% packet loss/;
+    next if exists $skip->{$server};
+
+    # PING a196.da1.akamai.net (63.80.4.51): 56 data bytes
+    # 64 bytes from 63.80.4.51: icmp_seq=0 ttl=56 time=241.853 ms
+    # 64 bytes from 63.80.4.51: icmp_seq=1 ttl=56 time=276.078 ms
+    # 64 bytes from 63.80.4.51: icmp_seq=2 ttl=56 time=297.841 ms
+    # 64 bytes from 63.80.4.51: icmp_seq=3 ttl=56 time=395.496 ms
+    # 
+    # --- a196.da1.akamai.net ping statistics ---
+    # 4 packets transmitted, 4 packets received, 0.0% packet loss
+    # round-trip min/avg/max/stddev = 241.853/302.817/395.496/57.109 ms
+
+    my ( $addr ) = ( $report =~ m{PING.*?\((.*?)\)} );
+    my ( $time ) = ( $report =~ m{round-trip min/avg/max/stddev = .*?/(.*?)/.*?ms} );
+    if ( $time < $min_time ){
+        $min_time = $time;
+        $min_server = $server;
+        $min_addr = $addr;
+        skip_next( $min_server );
+    }else{
+        skip_next( $server );
+    }
+    printf "  %dms  %s  %s; checked %22s (%4dms)\n", 
+        $min_time, $min_addr, $min_server, $server, $time; 
+}
+save_hosts( $min_addr );
+exit;
+
+sub skip_next {
+    my $server = shift;
+    my @skip = -f $file_skip ? read_file( $file_skip ) : ();
+    push @skip, "$server\n";
+    write_file( $file_skip, \@skip );
+}
+
+sub save_hosts {
+    my $addr = shift;
+    if ( $addr ){
+        my @lines = map { sprintf "%s  %s\n", $addr, $_ } @servers;
+        write_file( $file_host, \@lines );
+        print "Saved as $file_host\n";
+    }
+}
+

@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.16';
+version '0.17';
 
 
 #---------------------------
@@ -28,6 +28,7 @@ requires 'Image::Size';
 requires 'JSON::Syck';
 requires 'LWP::Simple';
 requires 'Lingua::Han::PinYin';
+requires 'List::Util';
 requires 'List::MoreUtils';
 requires 'MIME::Base64';
 requires 'Module::Extract::Use';
@@ -59,6 +60,7 @@ install_script 'pod2html-for';
 install_script 'random';
 install_script 'sort-patterns';
 install_script 'suck';
+install_script 'top-phobos';
 install_script 'update';
 install_script 'diff2html';
 
