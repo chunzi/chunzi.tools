@@ -2,31 +2,42 @@
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use List::Util qw/ shuffle /;
 use File::Slurp;
+use YAML::Syck;
 
-my $min_time = 999999;
-my $min_server;
-my $min_addr;
-my $file_skip = 'top-phobos.skip';
+# config
+my $file_ping = 'top-phobos.ping';
 my $file_host = 'top-phobos.host';
-my $skip = {}; map { chomp; $skip->{$_}++; } read_file( $file_skip ) if -f $file_skip;
 my @servers = map { sprintf "a%s.phobos.apple.com", $_ } (1..2000);
 
-# check out last min_addr from host file
-if ( -f $file_host ){
-    my @lines = read_file( $file_host );
-    ( $min_addr ) = split /\s+/, $lines[0];
+
+# ping results from previous run
+my $ping = -f $file_ping ? LoadFile( $file_ping ) : {};
+
+local $SIG{'INT'} = sub { save_host(); exit; };
+
+# ping the rest servers, save it immediately
+for my $server ( shuffle @servers ){
+
+    # skip
+    next if exists $ping->{$server};
+
+    # check out
+    my ( $time, $addr ) = ping_server( $server );
+    my ( $min_time, $min_addr, $min_server ) = find_min();
+    printf "  %dms  %s  %s;", $min_time, $min_addr, $min_server; 
+    printf "  checked %s (%dms)\n", $server, $time;
+    DumpFile( $file_ping, $ping );
 }
 
-local $SIG{'INT'} = sub { save_hosts( $min_addr ); exit; };
+save_host();
+exit;
 
-for my $server ( shuffle @servers ){
-    my $report = `ping -c4 $server`;
-    next unless $report =~ /0\.0% packet loss/;
-    next if exists $skip->{$server};
+sub ping_server {
+    my $server = shift;
 
     # PING a196.da1.akamai.net (63.80.4.51): 56 data bytes
     # 64 bytes from 63.80.4.51: icmp_seq=0 ttl=56 time=241.853 ms
@@ -38,35 +49,28 @@ for my $server ( shuffle @servers ){
     # 4 packets transmitted, 4 packets received, 0.0% packet loss
     # round-trip min/avg/max/stddev = 241.853/302.817/395.496/57.109 ms
 
+    my $report = `ping -c4 $server`;
+
     my ( $addr ) = ( $report =~ m{PING.*?\((.*?)\)} );
     my ( $time ) = ( $report =~ m{round-trip min/avg/max/stddev = .*?/(.*?)/.*?ms} );
-    if ( $time < $min_time ){
-        $min_time = $time;
-        $min_server = $server;
-        $min_addr = $addr;
-        skip_next( $min_server );
-    }else{
-        skip_next( $server );
-    }
-    printf "  %dms  %s  %s; checked %22s (%4dms)\n", 
-        $min_time, $min_addr, $min_server, $server, $time; 
-}
-save_hosts( $min_addr );
-exit;
+    $time = 999999 unless $report =~ /0\.0% packet loss/;
 
-sub skip_next {
-    my $server = shift;
-    my @skip = -f $file_skip ? read_file( $file_skip ) : ();
-    push @skip, "$server\n";
-    write_file( $file_skip, \@skip );
+    $ping->{$server}{'server'} = $server;
+    $ping->{$server}{'addr'} = $addr;
+    $ping->{$server}{'time'} = $time;
+
+    return ( $time, $addr );
 }
 
-sub save_hosts {
-    my $addr = shift;
-    if ( $addr ){
-        my @lines = map { sprintf "%s  %s\n", $addr, $_ } @servers;
-        write_file( $file_host, \@lines );
-        print "Saved as $file_host\n";
-    }
+sub find_min {
+    my @time_sorted = sort { $ping->{$a}{'time'} <=> $ping->{$b}{'time'} } keys %$ping;
+    my $server = shift @time_sorted;
+    return map { $ping->{$server}{$_} } qw / time addr server /;
 }
 
+sub save_host {
+    my ( $min_time, $min_addr, $min_server ) = find_min();
+    my @lines = map { sprintf "%s  %s\n", $min_addr, $_ } @servers;
+    write_file( $file_host, \@lines );
+    printf "Updated %s, using %s (%dms).\n", $file_host, $min_server, $min_time;
+}
