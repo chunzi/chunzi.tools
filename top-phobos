@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use List::Util qw/ shuffle /;
 use File::Slurp;
@@ -53,7 +53,7 @@ sub ping_server {
 
     my ( $addr ) = ( $report =~ m{PING.*?\((.*?)\)} );
     my ( $time ) = ( $report =~ m{round-trip min/avg/max/stddev = .*?/(.*?)/.*?ms} );
-    $time = 999999 unless $report =~ /0\.0% packet loss/;
+    $time = 999999 unless $report =~ /\b0\.0% packet loss/;
 
     $ping->{$server}{'server'} = $server;
     $ping->{$server}{'addr'} = $addr;
