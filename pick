@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use File::Copy::Recursive qw/ dircopy /;
 use File::HomeDir;
@@ -13,6 +13,8 @@ local $Term::ANSIColor::AUTORESET = 1;
 
 my $default_from = "/Volumes/500GB/Cloud/Music";
 my $auto = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes');
+$auto = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes.localized')
+    unless -d $auto;
 die "Target dir not found: $auto\n" unless -d $auto;
 
 #-----------------------
