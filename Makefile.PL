@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.20';
+version '0.21';
 
 
 #---------------------------
@@ -27,6 +27,7 @@ requires 'IPC::Cmd';
 requires 'Image::Size';
 requires 'JSON::Syck';
 requires 'LWP::Simple';
+requires 'LWP::Protocol::https';
 requires 'Lingua::Han::PinYin';
 requires 'List::Util';
 requires 'List::MoreUtils';

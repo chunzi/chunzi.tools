@@ -1,8 +1,10 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
+our $VERSION = '0.02';
 
 use LWP::Simple;
+use LWP::Protocol::https;
 use JSON::Syck;
 use Encode;
 use Encode::JavaScript::UCS;
@@ -65,7 +67,9 @@ sub backup {
     $url ||= "https://api.instagram.com/v1/users/self/media/recent/?access_token=$access_token";
     printf "Loading %s ...\n", $url;
 
-    my $json = get( $url );
+
+    my $json = get( $url ); 
+    die "Couldn't get the json from the API!\n" unless defined $json;
     my $hash = JSON::Syck::Load( $json );
 
     my $keep_loading = 0;
