@@ -79,7 +79,7 @@ sub backup {
 
         # seems sometimes the id appears as dddddd_88653 again and again,
         # simply ignore those invalid ids
-        next if $id =~ /\D/;
+        #next if $id =~ /\D/;
 
         my $date = date $_->{'created_time'};
         my $url = $_->{'images'}{'standard_resolution'}{'url'};
