@@ -30,7 +30,7 @@ for my $dir ( grep { -d } $pwd->children ){
         next unless -f $file;
     
         my $basename = $file->basename;
-        if ( -s $file > 3000000 && $basename =~ /\.(avi|mkv|wmv|iso|mp4)$/i ){
+        if ( -s $file > 3000000 && $basename =~ /\.(avi|mkv|wmv|iso|mp4|asf|iso)$/i ){
             my $ext = $1;
             $basename =~ s/\.$ext$//;
             $basename =~ s/^[^\@]*\@//;
