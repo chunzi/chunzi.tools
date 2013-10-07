@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.23';
+version '0.24';
 
 
 #---------------------------
@@ -26,13 +26,16 @@ requires 'HTTP::Request::Common';
 requires 'IPC::Cmd';
 requires 'Image::Size';
 requires 'JSON::Syck';
-requires 'LWP::Simple';
 requires 'LWP::Protocol::https';
+requires 'LWP::Simple';
 requires 'Lingua::Han::PinYin';
-requires 'List::Util';
 requires 'List::MoreUtils';
+requires 'List::Util';
 requires 'MIME::Base64';
 requires 'Module::Extract::Use';
+requires 'Mojo::JSON';
+requires 'Mojo::URL';
+requires 'Mojo::UserAgent';
 requires 'Path::Class';
 requires 'Term::ANSIColor';
 requires 'Text::Diff::Parser';
@@ -48,6 +51,8 @@ requires 'Plack::Handler::Twiggy';
 #---------------------------
 install_script 'album';
 install_script 'count';
+install_script 'diff2html';
+install_script 'douban-movie';
 install_script 'dust';
 install_script 'fanta';
 install_script 'find-links';
@@ -63,7 +68,6 @@ install_script 'sort-patterns';
 install_script 'suck';
 install_script 'top-phobos';
 install_script 'update';
-install_script 'diff2html';
 
 
 auto_install;

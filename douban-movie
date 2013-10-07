@@ -1,0 +1,35 @@
+#!/usr/bin/env perl
+use utf8;
+use strict;
+use Mojo::UserAgent;
+use Mojo::URL;
+use Mojo::JSON 'j';
+use Data::Dumper;
+use Path::Class;
+use File::Copy;
+use Encode;
+binmode STDOUT, ':utf8';
+
+my $douban_url = shift;
+my ($subject)  = ( $douban_url =~ m{http://movie.douban.com/subject/(\d+)\/?} );
+my $api_url    = sprintf 'http://api.douban.com/v2/movie/subject/%s', $subject;
+my $ua         = Mojo::UserAgent->new;
+my $url        = Mojo::URL->new($api_url);
+my $m          = $ua->get($url)->res->json;
+
+my $dir_basename = sprintf "%s %s %s %s\n", $m->{id}, $m->{title}, $m->{original_title}, $m->{year};
+$dir_basename =~ s/[:\/]+/_/g;
+
+my $dir = dir($dir_basename);
+-d $dir or $dir->mkpath;
+
+printf "%s\n", $m->{alt};
+my $cmd = sprintf "wget %s -O cover.jpg", $m->{images}{large};
+printf "$cmd\n";
+`$cmd`;
+
+my @files = map { decode_utf8( $_->basename ) } grep {-f} dir('.')->children;
+for (@files) {
+    move $_, $dir;
+}
+
