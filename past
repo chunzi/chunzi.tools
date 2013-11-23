@@ -1,0 +1,12 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use Class::Date qw/ now /;
+use File::Slurp;
+use feature qw/ say /;
+
+my $message = shift;
+my $log     = sprintf "%s %s\n", now, $message;
+my $file    = '/Users/chunzi/past.log';
+write_file( $file, { append => 1 }, [$log] );
+print $log;

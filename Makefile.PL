@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.24';
+version '0.25';
 
 
 #---------------------------
@@ -68,6 +68,7 @@ install_script 'sort-patterns';
 install_script 'suck';
 install_script 'top-phobos';
 install_script 'update';
+install_script 'past';
 
 
 auto_install;
