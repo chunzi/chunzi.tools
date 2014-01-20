@@ -17,7 +17,8 @@ local $Term::ANSIColor::AUTORESET = 1;
 my $itunes = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Music');
 die "iTuens dir not found: $itunes\n" unless -d $itunes;
 
-my $default_to = dir "/Volumes/500GB/Cloud/Music";
+my $default_to = dir( File::HomeDir->my_home, 'sucked' );
+$default_to || $default_to->mkpath( 0, 0777 );
 
 #-----------------------
 # options / usages
@@ -57,7 +58,7 @@ for my $artist ( @artists ){
         my $mt = MP3::Tag->new($files[0]);
         my @tags = $mt->get_tags;
         my $id3v2 = $mt->{'ID3v2'};
-        my $data = $id3v2->frame_select('APIC', '', '') or die "no expected APIC frame found";
+        my $data = $id3v2->frame_select('APIC', '', '') or die "no expected APIC frame found for $album";
         my $cover = $album->file('cover.jpg');
         write_file( $cover->stringify, { binmode => ':raw' }, $data );
         
