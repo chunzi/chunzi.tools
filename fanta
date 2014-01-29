@@ -3,62 +3,72 @@ use strict;
 use warnings;
 
 use File::Copy;
-use Getopt::Long;
 use Path::Class;
+use Class::Date qw/ now /;
+use utf8;
 
-my $dry = 0;
-GetOptions ( "dry" => \$dry);
+my $done = sprintf "done-%s", now->strftime('%m%d');
+my $trash = sprintf "trashed";
 
-my $extensions = join '|', qw/ jpg png gif url txt nfo mht rar /;
-my $regex_extensions = qr/\.($extensions)$/i;
+my $dir_done  = dir($done);
+my $dir_trash = dir($trash);
 
-#---------------------
-# only deal with the current directory
-my $pwd = dir '.';
-for my $dir ( grep { -d } $pwd->children ){
+-d $dir_done or $dir_done->mkpath( 0, 0777 );
+-d $dir_trash or $dir_trash->mkpath( 0, 0777 );
 
-    my $ds = $dir->file('.DS_Store');
-    -f $ds and $ds->remove;
+my $found   = [];
+my $removed = [];
+my $uniq    = {};
+my $pwd     = dir('.');
 
-    for my $file ( grep { -f } $dir->children ){
+find_big($pwd);
 
-        # remove unless files
-        if ( file_should_remove( $file ) ){ 
-            printf STDERR "rm %s\n", $file;
-            unlink $file unless $dry;
+for (@$found) {
+    my $name = name_for( $_->basename );
+    if ( exists $uniq->{$name} ) {
+        my ( $base, $ext ) = $name =~ /(.*?)\.(.*?)$/;
+        my $rand = int rand(100000);
+        $base = join '-RND', $base, $rand;
+        $name = join '.',    $base, $ext;
+    }
+    $uniq->{$name}++;
+    my $target = $dir_done->file($name);
+    printf "%s => %s\n", $_, $target;
+    rename "$_", $target;
+}
+
+for (@$removed) {
+    printf "trashed %s\n", $_;
+    rename "$_", $dir_trash->subdir("$_");
+}
+
+sub find_big {
+    my $pwd = shift;
+    my $deep = shift || 0;
+    $deep++;
+    for ( $pwd->children ) {
+        if ( -f and -s > 100 * 1024 * 1024 ) {
+            push @$found, $_;
         }
-        next unless -f $file;
-    
-        my $basename = $file->basename;
-        if ( -s $file > 3000000 && $basename =~ /\.(avi|mkv|wmv|iso|mp4|m4v|asf|iso)$/i ){
-            my $ext = $1;
-            $basename =~ s/\.$ext$//;
-            $basename =~ s/^[^\@]*\@//;
-            $basename =~ s/^\[[^\[]*?\]-?//;
-            $basename =~ s/\.H264\b//i;
-
-            if ( $basename =~ /^([a-z]+)-?(\d+)$/i ){
-                $basename = sprintf "%s-%03d", uc $1, $2;
+        elsif (-d) {
+            if ( $deep == 1 ) {
+                next if $_->basename =~ /^(done|trashed)/;
+                push @$removed, $_;
             }
-
-            my $new = $file->dir->parent->file( sprintf "%s.%s", $basename, $ext);
-            printf STDERR "mv %s %s\n", $file, $new;
-            rename "$file", "$new" unless $dry;
+            find_big( $_, $deep );
         }
     }
-
-    # remove empty directory
-    my @found = $dir->children;
-    $dir->rmtree if not @found;
 }
 
-
-exit;
-
-sub file_should_remove {
-    my $file = shift;
-    return 1 if $file =~ $regex_extensions;
-    return 1 if $file =~ /_____padding_file_/i;
-    return 1 if $file =~ /city9x\.com\.avi/i;
-    return undef;
+sub name_for {
+    my $name = lc shift;
+    my ($ext) = $name =~ /\.([^.]*?)$/;
+    $name =~ s/\.$ext$//;
+    $name =~ s/\b/\-/g;
+    $name =~ s/[^a-z0-9_-]//g;
+    $name =~ s/[_-]+/\-/g;
+    $name =~ s/^-|-$//g;
+    $name = join '.', uc $name, lc $ext;
+    return $name;
 }
+

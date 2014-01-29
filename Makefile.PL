@@ -1,8 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.27';
-
+version '0.28';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -47,7 +46,6 @@ requires 'YAML::Syck';
 requires 'Plack';
 requires 'Plack::Handler::Twiggy';
 
-
 #---------------------------
 install_script 'album';
 install_script 'count';
@@ -70,7 +68,6 @@ install_script 'top-phobos';
 install_script 'update';
 install_script 'past';
 install_script 'remove-ds-store';
-
 
 auto_install;
 WriteAll;
