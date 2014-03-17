@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.29';
+version '0.30';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -68,6 +68,7 @@ install_script 'top-phobos';
 install_script 'update';
 install_script 'past';
 install_script 'today';
+install_script 'now';
 install_script 'remove-ds-store';
 
 auto_install;
