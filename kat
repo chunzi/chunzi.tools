@@ -1,0 +1,104 @@
+#!/usr/bin/env perl
+
+# check the 1080p movies on kat.ph
+# parse and download the latest torrents
+# save in home/.kat and copy to Transmission watching dir
+# so run this script in cronjob and let tramsmission download the movies
+
+use strict;
+use File::HomeDir;
+use HTTP::Tiny;
+use Path::Class;
+use Text::Trim;
+use XML::Tiny::Simple qw/ parsestring /;
+use Data::Dumper;
+use File::Copy;
+use WWW::Mechanize;
+
+#-------------------------------------------------------------------------
+# the ~/.kat dir
+my $home = File::HomeDir->my_home;
+my $kat_dir = dir( $home, '.kat' );
+-d $kat_dir || $kat_dir->mkpath;
+
+#-------------------------------------------------------------------------
+# new torrents file will have a copy in that dir
+my $download_dir = dir( $home, 'Downloads' );
+
+#-------------------------------------------------------------------------
+# wget the rss link
+my $rss_url = 'http://kickass.to/usearch/1080p%20category%3Amovies/?rss=1';
+my $res     = HTTP::Tiny->new->get($rss_url);
+die "Failed wget $rss_url\n" unless $res->{success};
+
+#-------------------------------------------------------------------------
+# grab the items
+my $xml   = $res->{content};
+my $doc   = parsestring($xml);
+my $items = $doc->{rss}{channel}{item};
+
+#-------------------------------------------------------------------------
+# walk through the items
+my $movies = {};
+for my $item (@$items) {
+
+    #----------------------------
+    my $title_raw = $item->{title}{content};
+    my ( $title, $year, $rest ) = ( $title_raw =~ /(.*?)(\(?[1|2]\d\d\d\)?)(.*)$/ );
+    my $title_nor = lc $title;
+    $title_nor =~ s/\W//g;
+    $year =~ s/\D//g;
+    $rest =~ s/5\.1/5d1/g;
+    my @tags = sort grep { defined && $_ ne '' } map { lc trim } split /[\W\s]+/, $rest;
+    my $tags = join ',', @tags;
+
+    #----------------------------
+    my $size    = $item->{'torrent:contentLength'}{content};
+    my $size_gb = sprintf "%.1fGB", $size / 1024 / 1024 / 1024;
+    my $hash    = lc $item->{'torrent:infoHash'}{content};
+    my $url_kat = $item->{link}{content};
+    my $url_tor = $item->{enclosure}{url};
+    $url_tor =~ s/\.torrent(\?.*)$/\.torrent/;
+
+    $movies->{$title_nor}{$hash} = {
+        title   => $title,
+        size    => $size,
+        size_gb => $size_gb,
+        hash    => $hash,
+        url_tor => $url_tor,
+        url_kat => $url_kat,
+        year    => $year,
+        tags    => $tags,
+    };
+}
+
+#-------------------------------------------------------------------------
+my @movies_pending;
+for my $nor ( keys %$movies ) {
+    my $loop_first = 1;
+    for my $movie ( sort { $b->{size} <=> $a->{size} } values %{ $movies->{$nor} } ) {
+        my $prefix = ( $loop_first == 1 ) ? 'will' : 'skip';
+        printf "%s %s %s\n", $prefix, $movie->{size_gb}, $movie->{title};
+        push @movies_pending, $movie if $loop_first == 1;
+        $loop_first++;
+    }
+}
+printf "-----------------\n";
+
+#-------------------------------------------------------------------------
+for my $movie (@movies_pending) {
+    my $filename = sprintf "%s.torrent", $movie->{hash};
+    my $file = $kat_dir->file($filename);
+
+    if ( -f $file ) {
+        printf "skip %s %s\n", $filename, $movie->{title};
+    }
+    else {
+        printf "wget %s ...\n%s\n", $movie->{url_tor}, $movie->{title};
+        my $mech = new WWW::Mechanize;
+        $mech->get( $movie->{url_tor} );
+        $mech->save_content( $file->stringify, binmode => ':raw', decoded_by_headers => 1 );
+        copy $file, $download_dir;
+    }
+}
+

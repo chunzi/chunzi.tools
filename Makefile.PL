@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.30';
+version '0.31';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -22,6 +22,7 @@ requires 'Getopt::Long::Descriptive';
 requires 'Git::Repository';
 requires 'HTML::SimpleLinkExtor';
 requires 'HTTP::Request::Common';
+requires 'HTTP::Tiny';
 requires 'IPC::Cmd';
 requires 'Image::Size';
 requires 'JSON::Syck';
@@ -38,8 +39,10 @@ requires 'Mojo::UserAgent';
 requires 'Path::Class';
 requires 'Term::ANSIColor';
 requires 'Text::Diff::Parser';
+requires 'Text::Trim';
 requires 'WWW::Mechanize';
 requires 'WWW::Mechanize::GZip';
+requires 'XML::Tiny::Simple';
 requires 'YAML::Syck';
 
 # from shell scripts
@@ -70,6 +73,7 @@ install_script 'past';
 install_script 'today';
 install_script 'now';
 install_script 'remove-ds-store';
+install_script 'kat';
 
 auto_install;
 WriteAll;
