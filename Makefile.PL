@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.31';
+version '0.32';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -74,6 +74,7 @@ install_script 'today';
 install_script 'now';
 install_script 'remove-ds-store';
 install_script 'kat';
+install_script 'interfacelift';
 
 auto_install;
 WriteAll;
