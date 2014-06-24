@@ -93,6 +93,9 @@ for my $movie (@movies_pending) {
     if ( -f $file ) {
         printf "skip %s %s\n", $filename, $movie->{title};
     }
+    elsif ( $movie->{year} < 2000 ) {
+        printf "skip %s %s\n", $filename, $movie->{title};
+    }
     else {
         printf "wget %s ...\n%s\n", $movie->{url_tor}, $movie->{title};
         my $mech = new WWW::Mechanize;
