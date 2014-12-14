@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.33';
+version '0.34';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -43,6 +43,7 @@ requires 'Text::Trim';
 requires 'WWW::Mechanize';
 requires 'WWW::Mechanize::GZip';
 requires 'XML::Tiny::Simple';
+requires 'YAML';
 requires 'YAML::Syck';
 
 # from shell scripts
@@ -60,21 +61,22 @@ install_script 'find-links';
 install_script 'github-backup';
 install_script 'httpd-here';
 install_script 'instagram';
+install_script 'interfacelift';
 install_script 'jandown';
+install_script 'kat';
 install_script 'modules-used';
+install_script 'now';
+install_script 'past';
 install_script 'pick';
 install_script 'pod2html-for';
 install_script 'random';
+install_script 'remove-ds-store';
 install_script 'sort-patterns';
 install_script 'suck';
+install_script 'today';
 install_script 'top-phobos';
 install_script 'update';
-install_script 'past';
-install_script 'today';
-install_script 'now';
-install_script 'remove-ds-store';
-install_script 'kat';
-install_script 'interfacelift';
+install_script 'yamltidy';
 
 auto_install;
 WriteAll;
