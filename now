@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-date "+%H:%M" | pbcopy
+date "+%H:%M" | perl -ne 's/\n//;print' | pbcopy
