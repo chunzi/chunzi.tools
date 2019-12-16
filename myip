@@ -1,0 +1,7 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use utf8;
+use v5.10;
+use OpenDNS::MyIP qw/ get_ip /;
+say get_ip;

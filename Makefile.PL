@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.35';
+version '0.36';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -36,6 +36,7 @@ requires 'Module::Extract::Use';
 requires 'Mojo::JSON';
 requires 'Mojo::URL';
 requires 'Mojo::UserAgent';
+requires 'OpenDNS::MyIP';
 requires 'Path::Class';
 requires 'Term::ANSIColor';
 requires 'Text::Diff::Parser';
