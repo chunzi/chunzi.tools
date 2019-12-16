@@ -78,6 +78,7 @@ install_script 'today';
 install_script 'top-phobos';
 install_script 'update';
 install_script 'yamltidy';
+install_script 'myip';
 
 auto_install;
 WriteAll;
