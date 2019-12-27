@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.36';
+version '0.37';
 
 #---------------------------
 requires_external_bin 'pod2html';

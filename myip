@@ -4,4 +4,13 @@ use warnings;
 use utf8;
 use v5.10;
 use OpenDNS::MyIP qw/ get_ip /;
-say get_ip;
+use Sys::HostIP;
+use String::Flogger qw/ flog /;
+
+#----------------------------------------
+my $ip_public = get_ip;
+say flog [ 'public: %s', $ip_public ];
+
+#----------------------------------------
+my $ips_local = join ', ', grep { $_ ne '127.0.0.1' } @{ Sys::HostIP->new->ips };
+say flog [ ' local: %s', $ips_local ];
