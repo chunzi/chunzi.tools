@@ -11,10 +11,8 @@ use Term::ANSIColor qw/ :constants /;
 
 local $Term::ANSIColor::AUTORESET = 1;
 
-my $default_from = "/Volumes/500GB/Cloud/Music";
-my $auto = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes');
-$auto = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to iTunes.localized')
-    unless -d $auto;
+my $default_from = "/Volumes/1TB/Music";
+my $auto = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Automatically Add to Music.localized');
 die "Target dir not found: $auto\n" unless -d $auto;
 
 #-----------------------

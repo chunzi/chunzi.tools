@@ -1,2 +1,5 @@
 .DS_Store
 *.swp
+META.yml
+Makefile.old
+inc/
