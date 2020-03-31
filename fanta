@@ -68,6 +68,7 @@ sub name_for {
     $name =~ s/[^a-z0-9_-]//g;
     $name =~ s/[_-]+/\-/g;
     $name =~ s/^-|-$//g;
+    $name ||= 'name';
     $name = join '.', uc $name, lc $ext;
     return $name;
 }
