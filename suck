@@ -14,9 +14,12 @@ use Term::ANSIColor qw/ :constants /;
 
 local $Term::ANSIColor::AUTORESET = 1;
 
-my $itunes = dir( File::HomeDir->my_home, 'Music', 'iTunes', 'iTunes Media', 'Music');
+#--------------------------------------------------------------------------------
+# 从 Music 的存档目录读取专辑
+my $itunes = dir( File::HomeDir->my_home, 'Music', 'Music', 'Media.localized', 'Music');
 die "iTuens dir not found: $itunes\n" unless -d $itunes;
 
+# 整理复制后导出到此
 my $default_to = dir( File::HomeDir->my_home, 'sucked' );
 $default_to || $default_to->mkpath( 0, 0777 );
 

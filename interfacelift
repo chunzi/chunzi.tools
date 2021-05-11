@@ -8,18 +8,21 @@ local $| = 1;
 #-------------------------------------------------------------------------
 my $kinds = {
     'retina_macbook_pro_15' => '3840x2400',
+    'new' => '3840x2160',
     'imac_21'               => '1920x1080',
+    'imac_5k'               => '5120x2880',
 };
 
 #-------------------------------------------------------------------------
-my $pages = shift || 1;
-my $kind  = shift || 'retina_macbook_pro_15';
+my $pages = shift || 999;
+# my $kind  = shift || 'imac_5k' || 'retina_macbook_pro_15';
+my $kind  = shift || 'new';
 my $res   = $kinds->{$kind};
 
 #-------------------------------------------------------------------------
 # the ~/Pictures/InterfaceLift dir
 my $home = File::HomeDir->my_home;
-my $lift_dir = dir( $home, 'Pictures', 'InterfaceLift' );
+my $lift_dir = dir( $home, 'InterfaceLift' );
 -d $lift_dir || $lift_dir->mkpath;
 
 #-------------------------------------------------------------------------
