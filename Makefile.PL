@@ -62,7 +62,6 @@ install_script 'find-links';
 install_script 'github-backup';
 install_script 'httpd-here';
 install_script 'instagram';
-install_script 'interfacelift';
 install_script 'jandown';
 install_script 'kat';
 install_script 'modules-used';
