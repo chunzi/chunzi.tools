@@ -1,0 +1,49 @@
+#!/usr/bin/env perl
+use Dancer2;
+use Mojo::File;
+use YAML;
+use Template;
+    use Text::Markdown;
+
+    my $template = join "\n", <DATA>;
+
+get '/' => sub {
+
+    my $path = param 'path';
+
+    my $dir = Mojo::File->new('.');
+    my @files = grep { $_ =~ /\.md/ } $dir->list_tree->each;
+
+    my $vars = {};
+    $vars->{files} = \@files;
+    $vars->{path} = $path;
+
+    if ( $path ){
+    my $m = Text::Markdown->new;
+    my $file = Mojo::File->new( $path );
+    my $doc = $m->markdown($file->slurp);
+    $vars->{doc} = $doc;
+    
+    }
+
+
+    my $tt = Template->new;
+    my $html = '';
+    $tt->process( \$template, $vars, \$html );
+
+    return $html;
+};
+
+dance;
+
+
+__DATA__
+[% path %]
+
+[% doc %]
+
+[% FOREACH file = files %]
+<div>
+# <a href="/?path=[% file %]">[% file %]</a>
+</div>
+[% END %]
