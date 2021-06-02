@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-plackup --server Twiggy --port 5000 -MPlack::App::Directory -e 'Plack::App::Directory->new(root => ".")->to_app'
+plackup --server Starman --port 5000 -MPlack::App::Directory -e 'Plack::App::Directory->new(root => ".")->to_app'
