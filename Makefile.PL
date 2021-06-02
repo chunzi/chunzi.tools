@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.39';
+version '0.40';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -60,7 +60,7 @@ install_script 'douban-movie';
 install_script 'fanta';
 install_script 'find-links';
 install_script 'github-backup';
-install_script 'httpd-here';
+install_script 'here';
 install_script 'instagram';
 install_script 'jandown';
 install_script 'kat';
