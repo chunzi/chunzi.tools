@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.41';
+version '0.42';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -50,6 +50,7 @@ requires 'YAML::Syck';
 # from shell scripts
 requires 'Plack';
 requires 'Plack::Handler::Twiggy';
+requires 'Plack::Handler::Starman';
 
 #---------------------------
 install_script 'album';

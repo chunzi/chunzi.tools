@@ -1,35 +1,45 @@
 #!/usr/bin/env perl
 use Dancer2;
+use File::Slurp;
+use HTML::Toc;
+use HTML::TocInsertor;
 use Mojo::File;
-use YAML;
 use Template;
 use Text::Markdown;
-use File::Slurp;
+use YAML;
 
+our $VERSION = '0.01';
 my $template = join "\n", <DATA>;
 
+#--------------------------------------------------------------------------------
 set charset => 'utf8';
+get qr{.*}  => sub {
 
-get '/' => sub {
-
-    my $dir   = Mojo::File->new( '.' );
-    my @files = grep { $_ =~ /\.mm?d/ } $dir->list_tree->each;
-
-    my $vars = {};
+    #----------------------------------------
+    my $vars  = {};
+    my $pwd   = Mojo::File->new( '.' );
+    my @files = grep { $_ =~ /\.mm?d/ } $pwd->list_tree->each;
     $vars->{files} = \@files;
+    $vars->{pwd}   = $pwd;
 
-    my $path = param 'path';
+    #----------------------------------------
+    my $path = request->uri;
+    $path =~ s/^\///;
     if ( $path and -f $path ) {
-        my $m   = Text::Markdown->new;
-        my $md  = read_file( $path, { binmode => ':utf8 ' } );
-        my $doc = $m->markdown( $md );
-        $vars->{doc}  = $doc;
+        my $md   = read_file( $path, { binmode => ':utf8 ' } );
+        my $post = Text::Markdown->new->markdown( $md );
+        my $toc  = HTML::Toc->new;
+        HTML::TocInsertor->new->insert( $toc, $post, { 'output' => \$post } );
+
         $vars->{path} = $path;
+        $vars->{post} = $post;
+        $vars->{toc}  = $toc->format;
+        $vars->{ver}  = $VERSION;
     }
 
+    #----------------------------------------
     my $html = '';
     Template->new->process( \$template, $vars, \$html );
-
     return $html;
 };
 
@@ -45,27 +55,38 @@ __DATA__
     <style>
         h1, h2, h3, h4, h5, h6 { margin-bottom: 1.5rem; }
         p { font-size: 1.2rem; line-height: 1.82rem; font-family: Palatino,FreeSerif,Georgia,serif; margin-bottom: 1.2rem; }
-        pre { padding: 1.5rem; background: #f6f6f6; border-radius: 1rem; color: #333; margin-bottom: 1.2rem; }
+        pre { padding: 1.5rem; background: #f6f6f6; border-radius: 1rem; color: #333; margin-bottom: 1.5rem; }
+        .toc ul { list-style: none; padding-left: 1rem; }
+        .footer { background: #f6f6f6; color: #999; margin-top: 5rem; }
     </style>
 </head>
 <body>
 
-<div class="container mx-auto">
-<div class="row gap-3">
-    <div class="col"> 
-        [% FOREACH file = files %]
-        <div class="my-1 small text-truncate ">
-            <a class="text-decoration-none" href="/?path=[% file %]">[% file %]</a>
+<div class="text-muted small p-2 border-bottom">[% pwd.realpath %]</div>
+
+<div class="container-lg mx-auto mb-3">
+<div class="row">
+    <div class="col-2"> 
+        <div class="toc sticky-top pt-4">
+            [% FOREACH file = files %]
+            <div class="my-1 small text-truncate ">
+                <a class="text-decoration-none [% IF path == file %]text-muted[% END %]" href="/[% file %]">[% file %]</a>
+            </div>
+            [% END %]
         </div>
-        [% END %]
     </div>
-    <div class="col-7"> 
-        <div class="text-sm mb-3">[% path %]</div>
-        [% doc %]
+    <div class="col-8 pt-4 px-4"> 
+        <div class="text-muted small mb-3">[% path %]</div>
+        <div class="">[% post %]</div>
     </div>
-    <div class="col"> 
+    <div class="col-2"> 
+        <div class="toc sticky-top pt-4 small">[% toc %]</div>
     </div>
 </div>
+</div>
+
+<div class="footer py-4 small text-center">
+    mdhere v[% ver %]
 </div>
 
 </body>
