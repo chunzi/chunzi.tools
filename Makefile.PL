@@ -1,7 +1,7 @@
 use inc::Module::Install;
 name 'chunzi.tools';
 license 'perl';
-version '0.42';
+version '0.43';
 
 #---------------------------
 requires_external_bin 'pod2html';
@@ -19,7 +19,7 @@ requires 'File::HomeDir';
 requires 'File::Slurp';
 requires 'Getopt::Long';
 requires 'Getopt::Long::Descriptive';
-# requires 'Git::Repository';
+requires 'Git::Repository';
 requires 'HTML::SimpleLinkExtor';
 requires 'HTTP::Request::Common';
 requires 'HTTP::Tiny';
@@ -38,6 +38,7 @@ requires 'Mojo::URL';
 requires 'Mojo::UserAgent';
 requires 'OpenDNS::MyIP';
 requires 'Path::Class';
+requires 'String::Flogger';
 requires 'Term::ANSIColor';
 requires 'Text::Diff::Parser';
 requires 'Text::Trim';
@@ -57,7 +58,7 @@ install_script 'album';
 install_script 'count';
 install_script 'diff2html';
 install_script 'douban-movie';
-# install_script 'dust';
+install_script 'dust';
 install_script 'fanta';
 install_script 'find-links';
 install_script 'github-backup';

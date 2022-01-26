@@ -3,64 +3,30 @@ use strict;
 use File::HomeDir;
 use Path::Class;
 use Git::Repository;
+use String::Flogger qw/ flog /;
+use v5.10;
 
 my $home = dir home;
-my $checked = {};
-
-# should be empty
-check( $home->subdir($_) ) for qw/ Downloads Desktop purge-me /;
-
-# git repos
-check( $home->subdir($_) ) for qw/ github gitme /;
-
-# home
-check( $home, bypass => [qw{
-    Applications
-    Cloud
-    Documents
-    Dropbox
-    Library
-    Movies
-    Music
-    perl5
-    Pictures
-    Public
-    Sites
-}]);
-
+check( $home->subdir( $_ ) ) for qw/ Downloads Desktop Documents github /;
 
 sub check {
     my $root = shift;
-    my %params = @_;
     return unless -d $root;
+    for ( sort $root->children( no_hidden => 1 ) ) {
 
-
-    my $bypass = {};
-    $checked->{$root}++;
-    map { $bypass->{$_}++ } keys %$checked;
-    map { $bypass->{$_}++ } map { $root->subdir($_)->absolute } @{ $params{'bypass'} || [] };
-
-
-    for ( sort $root->children( no_hidden => 1 ) ){
-        next if exists $bypass->{$_->absolute->stringify};
-
-        # dump files
-        unless ( $_->is_dir ) {
-            print "? $_\n";
-
-        # or, git working dir, check its status
-        } elsif ( -d $_->subdir('.git') ) {
-            my $r = Git::Repository->new( work_tree => "$_" );
-            my $status = $r->run('status');
-            unless ( $status =~ /nothing to commit/ ) {
-                printf "M %s/\n", $_;
-            }
-
-        # dump other dirs
-        } else {
-            print "? $_/\n";
+        #--------------------
+        # 需要清理的仓库
+        if ( -d $_ && -d $_->subdir( '.git' ) ) {
+            my $repos  = Git::Repository->new( work_tree => "$_" );
+            my $status = $repos->run( 'status' );
+            next if $status =~ /working tree clean/;
+            say flog [ 'M %s', $_->basename ];
         }
-        
+
+        #--------------------
+        # 需要清理的文件
+        else {
+            print "? $_\n";
+        }
     }
 }
-
